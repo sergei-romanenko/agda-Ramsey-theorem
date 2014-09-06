@@ -149,8 +149,6 @@ data ℕ : Set where
      succ : ℕ → ℕ       
 
 {-# BUILTIN NATURAL ℕ #-}
-{-# BUILTIN ZERO O #-}
-{-# BUILTIN SUC succ #-}
 
 
 natrec : 
