@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+><head
+  ><title
+    >README</title
+    ><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"
+     /><meta http-equiv="Content-Style-Type" content="text/css"
+     /><link href="Agda.css" rel="stylesheet" type="text/css"
+     /></head
+  ><body
+  ><pre
+    ><a name="1" class="Keyword"
+      >module</a
+      ><a name="7"
+      > </a
+      ><a name="8" href="README.html#1" class="Module"
+      >README</a
+      ><a name="14"
+      > </a
+      ><a name="15" class="Keyword"
+      >where</a
+      ><a name="20"
+      >
+
+</a
+      ><a name="22" class="Comment"
+      >--------------------------------------------------------------------------------</a
+      ><a name="102"
+      >
+
+</a
+      ><a name="104" class="Comment"
+      >-- A formalisation of &quot;A direct proof of Ramsey&#8217;s Theorem&quot;, a note by</a
+      ><a name="173"
+      >
+</a
+      ><a name="174" class="Comment"
+      >-- Thierry coquand, version of October 24, 2011, formalised by David</a
+      ><a name="242"
+      >
+</a
+      ><a name="243" class="Comment"
+      >-- Wahlstedt (david.wahlstedt@gmail.com), November 2011, work funded</a
+      ><a name="311"
+      >
+</a
+      ><a name="312" class="Comment"
+      >-- by the Swedish Research Council, project reg no: 2008:6902.</a
+      ><a name="374"
+      >
+
+</a
+      ><a name="376" class="Comment"
+      >-- This is part of joint work, the paper &quot;Stop when you are</a
+      ><a name="435"
+      >
+</a
+      ><a name="436" class="Comment"
+      >-- Almost-Full, Adventures in constructive termination&quot;, by Dimitrios</a
+      ><a name="505"
+      >
+</a
+      ><a name="506" class="Comment"
+      >-- Vytiniotis, Thierry Coquand, and David Wahlstedt, submitted for ITP</a
+      ><a name="576"
+      >
+</a
+      ><a name="577" class="Comment"
+      >-- 2012 (http://itp2012.cs.princeton.edu/). There, the result in</a
+      ><a name="641"
+      >
+</a
+      ><a name="642" class="Comment"
+      >-- Coquand's note is used (in a Coq development by Vytiniotis) to give</a
+      ><a name="712"
+      >
+</a
+      ><a name="713" class="Comment"
+      >-- a constructive justification of Size-Change Termination (SCT), (Lee,</a
+      ><a name="784"
+      >
+</a
+      ><a name="785" class="Comment"
+      >-- Jones, Ben-Amram, 2001), among other things.</a
+      ><a name="832"
+      >
+
+</a
+      ><a name="834" class="Comment"
+      >-- This formalisation uses only very basic type theory.  In some of</a
+      ><a name="901"
+      >
+</a
+      ><a name="902" class="Comment"
+      >-- the main lemmas we use non-trivial termination arguments: by</a
+      ><a name="965"
+      >
+</a
+      ><a name="966" class="Comment"
+      >-- lexicographic recursion, which can be reduced directly to</a
+      ><a name="1026"
+      >
+</a
+      ><a name="1027" class="Comment"
+      >-- (higher-order) primitive recursion. Note that Size-Change</a
+      ><a name="1087"
+      >
+</a
+      ><a name="1088" class="Comment"
+      >-- Termination is supported (yet without formal justification) in</a
+      ><a name="1153"
+      >
+</a
+      ><a name="1154" class="Comment"
+      >-- Agda, but this is *not* needed in this formalisation, which is</a
+      ><a name="1219"
+      >
+</a
+      ><a name="1220" class="Comment"
+      >-- important, if we want to use it for justifying SCT.</a
+      ><a name="1274"
+      >
+
+</a
+      ><a name="1276" class="Comment"
+      >--------------------------------------------------------------------------------</a
+      ><a name="1356"
+      >
+
+</a
+      ><a name="1358" class="Comment"
+      >-- The Intuitionistic Ramsey Theorem (IRT) states that the</a
+      ><a name="1416"
+      >
+</a
+      ><a name="1417" class="Comment"
+      >-- intersection of two almost full relations is almost full. An n-ary</a
+      ><a name="1486"
+      >
+</a
+      ><a name="1487" class="Comment"
+      >-- relation R over a given set X, is &quot;almost full&quot;, in the classical</a
+      ><a name="1555"
+      >
+</a
+      ><a name="1556" class="Comment"
+      >-- sense, when each infinite sequence over X has a finite prefix</a
+      ><a name="1620"
+      >
+</a
+      ><a name="1621" class="Comment"
+      >-- containing a sub-sequence on length n satisfying R. This is</a
+      ><a name="1683"
+      >
+</a
+      ><a name="1684" class="Comment"
+      >-- constructively described as an inductive bar property. It can be</a
+      ><a name="1751"
+      >
+</a
+      ><a name="1752" class="Comment"
+      >-- shown classically that IRT is equivalent with the infinite version</a
+      ><a name="1821"
+      >
+</a
+      ><a name="1822" class="Comment"
+      >-- of Ramsey's Theorem.</a
+      ><a name="1845"
+      >
+
+</a
+      ><a name="1847" class="Comment"
+      >--------------------------------------------------------------------------------</a
+      ><a name="1927"
+      >
+
+</a
+      ><a name="1929" class="Comment"
+      >-- Some basic types and logical facts</a
+      ><a name="1966"
+      >
+
+</a
+      ><a name="1968" class="Keyword"
+      >import</a
+      ><a name="1974"
+      > </a
+      ><a name="1975" href="Prelude.html#1" class="Module"
+      >Prelude</a
+      ><a name="1982"
+      >
+
+</a
+      ><a name="1984" class="Comment"
+      >-- A distrubutive lattice D with elements a, b, c, and operations &#8743;</a
+      ><a name="2051"
+      >
+</a
+      ><a name="2052" class="Comment"
+      >-- and &#8744;, neutral element &#8321;. In this formalisation D is instantiated</a
+      ><a name="2120"
+      >
+</a
+      ><a name="2121" class="Comment"
+      >-- to predicates over finite sequences of a given set X. The following</a
+      ><a name="2191"
+      >
+</a
+      ><a name="2192" class="Comment"
+      >-- module defines some list predicate transformers and proves</a
+      ><a name="2253"
+      >
+</a
+      ><a name="2254" class="Comment"
+      >-- properties about them.</a
+      ><a name="2279"
+      >
+
+</a
+      ><a name="2281" class="Keyword"
+      >import</a
+      ><a name="2287"
+      > </a
+      ><a name="2288" href="ListPredicate.html#1" class="Module"
+      >ListPredicate</a
+      ><a name="2301"
+      >
+
+</a
+      ><a name="2303" class="Comment"
+      >-- The main result</a
+      ><a name="2321"
+      >
+
+</a
+      ><a name="2323" class="Keyword"
+      >import</a
+      ><a name="2329"
+      > </a
+      ><a name="2330" href="IRT.html#1" class="Module"
+      >IRT</a
+      ><a name="2333"
+      >
+
+
+</a
+      ></pre
+    ></body
+  ></html
+>
