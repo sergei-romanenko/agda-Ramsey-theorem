@@ -40,8 +40,8 @@ module Everything where
 
 import Prelude
 
--- A distrubutive lattice D with elements a, b, c, and operations ∧
--- and ∨, neutral element ₁. In this formalisation D is instantiated
+-- A distrubutive lattice D with elements a, b, c, and operations ×
+-- and ⊎, neutral element ₁. In this formalisation D is instantiated
 -- to predicates over finite sequences of a given set X. The following
 -- module defines some list predicate transformers and proves
 -- properties about them.
