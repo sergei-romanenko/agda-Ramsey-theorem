@@ -15,58 +15,36 @@ open import Data.Unit
 open import Data.Empty
   using (⊥)
 
+open import Relation.Unary
+  using(Pred)
+  renaming (_⊆′_ to _⊆_; _∪_ to _⨆_; _∩_ to _⨅_)
+
 open import Function
 
 -- Predicates and relations
 
-open import Relation.Unary public
-  using (Pred)
-
-Pred[_] : (A : Set) → Set₁
-Pred[ A ] = Pred (List A) lzero
-
------------------------------------------------------------------------------
-
--- Properties of list predicates A : Pred[ X ]
-
------------------------------------------------------------------------------
--- Some (list) predicate operations
-
-infixr 1010 _⨅_ _⨆_
-
-_⨅_ : ∀ {ℓ} {A : Set ℓ} → Pred A ℓ → Pred A ℓ → Pred A ℓ
-P ⨅ Q = λ a → P a × Q a
-
-_⨆_ : ∀ {ℓ} {A : Set ℓ} → Pred A ℓ → Pred A ℓ → Pred A ℓ
-P ⨆ Q = λ a → P a ⊎ Q a
-
------------------------------------------------------------------------------
--- List predicate "subset"
-
-infix 110 _⊆_
-
-_⊆_ : {X : Set} → (A B : Pred[ X ]) → Set
-A ⊆ B = ∀ xs → A xs → B xs
-
+Pred[_] : ∀ {ℓ} (A : Set ℓ) → Set (lsuc ℓ)
+Pred[ A ] = Pred (List A) _
 
 -----------------------------------------------------------------------------
 -- List predicate equality
 
-infix 110 _≡_ 
+--infix 110 _≋_
+infix 4 _≋_ 
 
-_≡_ : {X : Set} → Pred[ X ] → Pred[ X ] → Set
-A ≡ B = A ⊆ B × B ⊆ A
+_≋_ : {X : Set} → Pred[ X ] → Pred[ X ] → Set
+A ≋ B = A ⊆ B × B ⊆ A
 
-refl≡ : {X : Set} → (A : Pred[ X ]) → A ≡ A
-refl≡ A = (λ x x' → x') , λ x x' → x'
+refl≋ : {X : Set} → (A : Pred[ X ]) → A ≋ A
+refl≋ A = (λ x x' → x') , λ x x' → x'
 
-symm≡ : {X : Set} → (A B : Pred[ X ]) →
-        A ≡ B → B ≡ A
-symm≡ A B (a , b) = b , a 
+symm≋ : {X : Set} → (A B : Pred[ X ]) →
+        A ≋ B → B ≋ A
+symm≋ A B (a , b) = b , a 
 
-trans≡ : {X : Set} → (A B C : Pred[ X ]) →
-         A ≡ B → B ≡ C → A ≡ C
-trans≡ A B C (a , b) (a' , b') =
+trans≋ : {X : Set} → (A B C : Pred[ X ]) →
+         A ≋ B → B ≋ C → A ≋ C
+trans≋ A B C (a , b) (a' , b') =
   (λ x x' → a' x (a x x')) , λ x x' → b x (b' x x') 
 
 
@@ -74,12 +52,12 @@ trans≡ A B C (a , b) (a' , b') =
 -- Some special cases of substitutivity
 
 left-disj-subst :  {X : Set} → (A A' B : Pred[ X ]) →
-                   A ≡ A' → A ⨆ B ≡ A' ⨆ B
+                   A ≋ A' → A ⨆ B ≋ A' ⨆ B
 left-disj-subst A A' B (a , b) = 
   (λ xs → Sum.map (a xs) id) , (λ xs → Sum.map (b xs) id)
 
 right-disj-subst :  {X : Set} → (A B B' : Pred[ X ]) →
-                   B ≡ B' → A ⨆ B ≡ A ⨆ B'
+                   B ≋ B' → A ⨆ B ≋ A ⨆ B'
 right-disj-subst A A' B (a , b) =
   (λ xs → Sum.map id (a xs)) , (λ xs → Sum.map id (b xs))
 
@@ -95,20 +73,20 @@ right-disj-subst A A' B (a , b) =
 ₁ = λ xs → ⊤
 
 -----------------------------------------------------------------------------
--- Replacement for ₁ ≡ A (see Coquand's note), 'True A' is easier for
+-- Replacement for ₁ ≋ A (see Coquand's note), 'True A' is easier for
 -- agda to scrutinize.
 
 True : {X : Set} → Pred[ X ] → Set
 True A = ∀ xs → A xs
 
--- True A is equivalent with ₁ ≡ A
-True-1≡A : {X : Set} → (A : Pred[ X ]) →
-            True A → (₁ ≡ A)
-True-1≡A A h = (λ xs h' → h xs) , λ xs h → tt
+-- True A is equivalent with ₁ ≋ A
+True-1≋A : {X : Set} → (A : Pred[ X ]) →
+            True A → (₁ ≋ A)
+True-1≋A A h = (λ xs h' → h xs) , λ xs h → tt
 
-1≡A-True : {X : Set} → (A : Pred[ X ]) →
-            (₁ ≡ A) → True A
-1≡A-True A (a , b) xs = a xs tt
+1≋A-True : {X : Set} → (A : Pred[ X ]) →
+            (₁ ≋ A) → True A
+1≋A-True A (a , b) xs = a xs tt
 
 -----------------------------------------------------------------------------
 -- Some list predicate operations to be used in the definition of almost full
@@ -128,28 +106,28 @@ P ⟪ x ⟫ = P ⨆ P · x
 -- Some properties
 -----------------------------------------------------------------------------
 consDisj : {X : Set} → (A B : Pred[ X ]) → (x : X) →
-           ((A ⨆ B) · x) ≡ (A · x ⨆ B · x)
-consDisj A B x = refl≡ ((A ⨆ B) · x)
+           ((A ⨆ B) · x) ≋ (A · x ⨆ B · x)
+consDisj A B x = refl≋ ((A ⨆ B) · x)
 
 -- the following two are not used:
 consConj : {X : Set} → (A B : Pred[ X ]) → (x : X) →
-           ((A ⨅ B) · x) ≡ (A · x ⨅ B · x)
-consConj A B x = refl≡ ((A ⨅ B) · x)
+           ((A ⨅ B) · x) ≋ (A · x ⨅ B · x)
+consConj A B x = refl≋ ((A ⨅ B) · x)
 
-unitCons : {X : Set} → (x : X) → (₁ · x) ≡ ₁
-unitCons x = refl≡ (₁ · x)
-
------------------------------------------------------------------------------
--- substitutivity of _≡_ for _·_ and _⟪_⟫ 
------------------------------------------------------------------------------
-subst-·≡ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
-            A ≡ B → A · x ≡ B · x
-subst-·≡ A B x (A⊆B , B⊆A) = (λ xs → A⊆B (x ∷ xs)) , (λ xs → B⊆A (x ∷ xs))
+unitCons : {X : Set} → (x : X) → (₁ · x) ≋ ₁
+unitCons x = refl≋ (₁ · x)
 
 -----------------------------------------------------------------------------
-subst-⟪⟫≡ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
-            A ≡ B → A ⟪ x ⟫ ≡ B ⟪ x ⟫
-subst-⟪⟫≡ A B x (a , b) =
+-- substitutivity of _≋_ for _·_ and _⟪_⟫ 
+-----------------------------------------------------------------------------
+subst-·≋ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+            A ≋ B → A · x ≋ B · x
+subst-·≋ A B x (A⊆B , B⊆A) = (λ xs → A⊆B (x ∷ xs)) , (λ xs → B⊆A (x ∷ xs))
+
+-----------------------------------------------------------------------------
+subst-⟪⟫≋ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+            A ≋ B → A ⟪ x ⟫ ≋ B ⟪ x ⟫
+subst-⟪⟫≋ A B x (a , b) =
   (λ xs → Sum.map (a xs) (a (x ∷ xs))) , (λ xs → Sum.map (b xs) (b (x ∷ xs)))
 
 -----------------------------------------------------------------------------
@@ -172,14 +150,14 @@ distrib-⨆-⟪x⟫₂ A B x xs (inj₂ (inj₂ b)) = inj₂ (inj₂ b)
 
 -----------------------------------------------------------------------------
 distrib-⨆-⟪x⟫ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
-  (A ⨆ B) ⟪ x ⟫ ≡ A ⟪ x ⟫ ⨆ B ⟪ x ⟫
+  (A ⨆ B) ⟪ x ⟫ ≋ A ⟪ x ⟫ ⨆ B ⟪ x ⟫
 distrib-⨆-⟪x⟫ A B x = distrib-⨆-⟪x⟫₁ A B x , distrib-⨆-⟪x⟫₂ A B x
 
 -----------------------------------------------------------------------------
 -- this one is not used, but mentioned in Coquand's note:
 distrib-⨅-cons : {X : Set} → (A B : Pred[ X ]) → (x : X) →
-               (A ⨅ B) ⨆ A · x ⨅ B · x ≡ (A ⨅ B) ⟪ x ⟫
-distrib-⨅-cons A B x = refl≡ ((A ⨅ B) ⨆ A · x ⨅ B · x)
+               (A ⨅ B) ⨆ A · x ⨅ B · x ≋ (A ⨅ B) ⟪ x ⟫
+distrib-⨅-cons A B x = refl≋ ((A ⨅ B) ⨆ A · x ⨅ B · x)
 
 -----------------------------------------------------------------------------
 monotone-⟪x⟫ : {X : Set} → (A B : Pred[ X ]) → (x : X) → 
@@ -188,9 +166,9 @@ monotone-⟪x⟫ A B x h xs (inj₁ h') = inj₁ (h xs h')
 monotone-⟪x⟫ A B x h xs (inj₂ h') = inj₂ (h (x ∷ xs) h')
 
 -----------------------------------------------------------------------------
-distrib-subst⨆≡⟪x⟫ : {X : Set} → (P B S : Pred[ X ]) → (x : X) →
-                P ≡ B ⨆ S → P ⟪ x ⟫ ≡ B ⟪ x ⟫ ⨆ S ⟪ x ⟫
-distrib-subst⨆≡⟪x⟫ P B S x (a , b) = 
+distrib-subst⨆≋⟪x⟫ : {X : Set} → (P B S : Pred[ X ]) → (x : X) →
+                P ≋ B ⨆ S → P ⟪ x ⟫ ≋ B ⟪ x ⟫ ⨆ S ⟪ x ⟫
+distrib-subst⨆≋⟪x⟫ P B S x (a , b) = 
   (λ xs h →
      distrib-⨆-⟪x⟫₁ B S x xs
        (monotone-⟪x⟫ P (B ⨆ S) x a xs h)) ,
