@@ -71,7 +71,7 @@ nRel (suc n) A = A → nRel n A
 
 -- conversion from n-ary relations to list n-prefix predicates
 
-fromNRel : {X : Set} → (n : ℕ) → nRel n X → Pred₀ [ X ]
+fromNRel : {X : Set} → (n : ℕ) → nRel n X → Pred[ X ]
 fromNRel zero R xs = R
 fromNRel (suc n) R [] = ⊥
 fromNRel (suc n) R (x ∷ xs) = fromNRel n (R x) xs
@@ -113,7 +113,7 @@ commut-∩-⨅ n R S = (λ x → commut-∩-⨅₁ n R S x) , λ x → commut-�
 -- being equal to one, is not Ar. There is no point where A becomes
 -- constant.
 -----------------------------------------------------------------------------
-data Ar {X : Set} (A : Pred₀ [ X ]) : Set where
+data Ar {X : Set} (A : Pred[ X ]) : Set where
   leafAr : (∀ x → (A · x) ≡ A) → Ar A
   indAr : (∀ x → Ar (A · x)) → Ar A
 
@@ -130,7 +130,7 @@ fromNRel→Ar (suc n) R = indAr (λ x' → fromNRel→Ar n (R x'))
 -----------------------------------------------------------------------------
 -- Almost full relations. Like a Well-Quasi ordering, without transitivity
 -----------------------------------------------------------------------------
-data AF {X : Set} (A : Pred₀ [ X ]) : Set where
+data AF {X : Set} (A : Pred[ X ]) : Set where
   leafAF : True A → AF A
   indAF : ((x : X) → AF(A ⟪ x ⟫)) → AF A
 
@@ -138,15 +138,15 @@ data AF {X : Set} (A : Pred₀ [ X ]) : Set where
 -- By P is monotone, we mean: P(A) → (A → B) → P(B)
 -- So IRT.lemma-01 could be formulated as AF being monotone
 
-monotone : {X : Set} → (Pred₀ X → Set) → Set₁
-monotone {X} P = (A B : Pred₀ X) →
+monotone : ∀ {ℓ} {X : Set ℓ} → (Pred X ℓ → Set ℓ) → Set (lsuc ℓ)
+monotone {ℓ} {X} P = (A B : Pred X ℓ) →
                  ((x : X) → A x → B x) → (P A → P B)
 
 -----------------------------------------------------------------------------
 -- Monotonicity of AF
 --
 -- As stated in Coquand's note:
--- lemma-01 : {X : Set} → (A B : Pred₀ [ X ]) → A ⊆ B → AF A → AF B
+-- lemma-01 : {X : Set} → (A B : Pred[ X ]) → A ⊆ B → AF A → AF B
 -----------------------------------------------------------------------------
 lemma-01 : {X : Set} → monotone (AF {X})
 -----------------------------------------------------------------------------
@@ -159,12 +159,12 @@ lemma-01 A B hA⊆B (indAF f) =
 -----------------------------------------------------------------------------
 -- preparation for lemma-02
 -----------------------------------------------------------------------------
-lemma-02-1-1 : {X : Set} → (A B R S : Pred₀ [ X ]) → 
+lemma-02-1-1 : {X : Set} → (A B R S : Pred[ X ]) → 
                True (A ⨆ R) → B ⨆ S ⊆ A ⨆ B ⨆ (R ⨅ S)
 lemma-02-1-1 A B R S h1 h2 h3 = A⊎C→B⊎D→A⊎B⊎C×D (h1 h2) h3
 
 -----------------------------------------------------------------------------
-lemma-02-1 : {X : Set} → (A B R S : Pred₀ [ X ]) → 
+lemma-02-1 : {X : Set} → (A B R S : Pred[ X ]) → 
              True(A ⨆ R) → True(B ⨆ S) → True(A ⨆ B ⨆ (R ⨅ S))
 lemma-02-1 A B R S h1 h2 = 
   λ xs →
@@ -173,7 +173,7 @@ lemma-02-1 A B R S h1 h2 =
          (λ xs' → h1 xs) xs (h2 xs)
 
 -----------------------------------------------------------------------------
-lemma-02-2-2 : {X : Set} → (A R S : Pred₀ [ X ]) → (x : X) →
+lemma-02-2-2 : {X : Set} → (A R S : Pred[ X ]) → (x : X) →
                True(A · x ⨆ R · x) →
                R ⨅ S · x ⊆ A · x ⨆ (R · x ⨅ S · x)
 lemma-02-2-2 A R S x h1 xs (a , b) = 
@@ -183,13 +183,13 @@ lemma-02-2-2 A R S x h1 xs (a , b) =
 -- pattern-matching, have been auto-generated (with some manual
 -- renaming) by Agda's "auto" facility, by Fredrik Lindblad
 -----------------------------------------------------------------------------
-lemma-02-2-1-1 :  {X : Set} → (A B R S : Pred₀ [ X ]) → (x : X) →
+lemma-02-2-1-1 :  {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
                   A · x ⨆ (R · x ⨅ S · x) ⊆ (A ⨆ B ⨆ (R ⨅ S))⟪ x ⟫
 lemma-02-2-1-1 A B R S x xs (inj₁ a) = inj₂ (inj₁ a)
 lemma-02-2-1-1 A B R S x xs (inj₂ b) = inj₂ (inj₂ (inj₂ b))
 
 -----------------------------------------------------------------------------
-lemma-02-2-1 : {X : Set} → (A B R S : Pred₀ [ X ]) → (x : X) →
+lemma-02-2-1 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
                R ⨅ S · x ⊆ A · x ⨆ (R · x ⨅ S · x) →
                A ⨆ B ⟪ x ⟫ ⨆ (R ⨅ S ⟪ x ⟫) ⊆ (A ⨆ B ⨆ (R ⨅ S))⟪ x ⟫
 lemma-02-2-1 A B R S x h1 xs (inj₁ a) = inj₁ (inj₁ a)
@@ -201,7 +201,7 @@ lemma-02-2-1 A B R S x h1 xs (inj₂ (inj₂ (a , inj₂ b))) =
   lemma-02-2-1-1 A B R S x xs (h1 xs (a , b))
 
 -----------------------------------------------------------------------------
-lemma-02-2 : {X : Set} → (A B R S : Pred₀ [ X ]) → (x : X) →
+lemma-02-2 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
              True(A ⨆ R) →
              A ⨆ B ⟪ x ⟫ ⨆ (R ⨅ S ⟪ x ⟫) ⊆ (A ⨆ B ⨆ (R ⨅ S))⟪ x ⟫
 lemma-02-2 A B R S x h1 xs h2 =
@@ -211,7 +211,7 @@ lemma-02-2 A B R S x h1 xs h2 =
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02' : {X : Set} → (P A B R S : Pred₀ [ X ]) →
+lemma-02' : {X : Set} → (P A B R S : Pred[ X ]) →
             True(A ⨆ R) → AF P → P ≡ B ⨆ S → AF(A ⨆ B ⨆ (R ⨅ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -235,7 +235,7 @@ lemma-02' P A B R S A⨆R (indAF afPx) P≡B⨆S =
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02 : {X : Set} → (A B R S : Pred₀ [ X ]) →
+lemma-02 : {X : Set} → (A B R S : Pred[ X ]) →
            True(A ⨆ R) → AF(B ⨆ S) → AF(A ⨆ B ⨆ (R ⨅ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -245,7 +245,7 @@ lemma-02 = λ A B R S h1 h2 →
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02-sym : {X : Set} → (A B R S : Pred₀ [ X ]) →
+lemma-02-sym : {X : Set} → (A B R S : Pred[ X ]) →
                True(B ⨆ S) → AF(A ⨆ R) → AF(A ⨆ B ⨆ (R ⨅ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -257,7 +257,7 @@ lemma-02-sym A B R S h1 h2 =
 -----------------------------------------------------------------------------
 -- preparation for lemma-03
 -----------------------------------------------------------------------------
-lemma-03-1 : {X : Set} → (A B R S : Pred₀ [ X ]) → (x : X) →
+lemma-03-1 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
              R ⟪ x ⟫ ≡ R → A ⟪ x ⟫ ⨆ B ⨆ R ⟪ x ⟫ ⨅ S ⊆ (A ⨆ B ⨆ R ⨅ S) ⟪ x ⟫
 lemma-03-1 A B R S x (a , b) xs (inj₁ (inj₁ a')) = inj₁ (inj₁ a')
 lemma-03-1 A B R S x (a , b) xs (inj₁ (inj₂ b')) = inj₂ (inj₁ b')
@@ -266,12 +266,12 @@ lemma-03-1 A B R S x (a , b) xs (inj₂ (inj₂ (a' , b'))) =
   inj₁ (inj₂ (inj₂ (a xs a' , b')))
 
 -----------------------------------------------------------------------------
-lemma-03-2 : {X : Set} → (R : Pred₀ [ X ]) → (x : X) →
+lemma-03-2 : {X : Set} → (R : Pred[ X ]) → (x : X) →
              R · x ≡ R → R ⟪ x ⟫ ≡ R
 lemma-03-2 R x (a , b) =
   (λ xs → a xs ∘ [ b xs , id ]′) , (λ xs → inj₁)
 
-lemma-03-3 : {X : Set} → (A B R' R S : Pred₀ [ X ]) → 
+lemma-03-3 : {X : Set} → (A B R' R S : Pred[ X ]) → 
              R' ≡ R → A ⨆ B ⨆ R ⨅ S ⊆ A ⨆ B ⨆ R' ⨅ S
 lemma-03-3 A B R' R S (h1 , h2) xs (inj₁ a) = inj₁ a
 lemma-03-3 A B R' R S (h1 , h2) xs (inj₂ (inj₁ a)) = inj₂ (inj₁ a)
@@ -279,14 +279,14 @@ lemma-03-3 A B R' R S (h1 , h2) xs (inj₂ (inj₂ (a , b))) =
   inj₂ (inj₂ (h2 xs a , b))
 
 -----------------------------------------------------------------------------
-lemma-03-4 : {X : Set} → (A B C D : Pred₀ [ X ]) →
+lemma-03-4 : {X : Set} → (A B C D : Pred[ X ]) →
              A ≡ B ⨆ C → C ≡ D → A ≡ B ⨆ D
 lemma-03-4 A B C D (a , b) (a' , b') =
   (λ xs → Sum.map id (a' xs) ∘ a xs) , (λ xs → b xs ∘ Sum.map id (b' xs))
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03' : {X : Set} → (P A B R S : Pred₀ [ X ]) →
+lemma-03' : {X : Set} → (P A B R S : Pred[ X ]) →
             (∀ x → R · x ≡ R) → AF(P) → P ≡ A ⨆ R → AF(B ⨆ S) → 
             AF(A ⨆ B ⨆ R ⨅ S)
 -----------------------------------------------------------------------------
@@ -316,7 +316,7 @@ lemma-03' P A B R S Rx≡R (indAF h) P≡A⨆R AF-B⨆S =
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03 : {X : Set} → (A B R S : Pred₀ [ X ]) →
+lemma-03 : {X : Set} → (A B R S : Pred[ X ]) →
            (∀ x → R · x ≡ R) → AF(A ⨆ R) → AF(B ⨆ S) → AF(A ⨆ B ⨆ R ⨅ S)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -326,7 +326,7 @@ lemma-03 = λ A B R S h1 h2 →
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03-sym : {X : Set} → (A B R S : Pred₀ [ X ]) →
+lemma-03-sym : {X : Set} → (A B R S : Pred[ X ]) →
                (∀ x → S · x ≡ S) → AF(A ⨆ R) → AF(B ⨆ S) → AF(A ⨆ B ⨆ R ⨅ S)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -340,7 +340,7 @@ lemma-03-sym A B R S h1 h2 h3 =
 -- preparation for theorem-04
 -----------------------------------------------------------------------------
 lemma-04-1 :
-  {X : Set} → (A B R S : Pred₀ [ X ]) → (x : X) →
+  {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
   (A ⟪ x ⟫ ⨆ B ⟪ x ⟫ ⨆ (R ⨅ S)) ⨆ (R · x ⨅ S · x) ⊆ (A ⨆ B ⨆ R ⨅ S) ⟪ x ⟫
 lemma-04-1 A B R S x xs (inj₁ (inj₁ (inj₁ a))) = inj₁ (inj₁ a)
 lemma-04-1 A B R S x xs (inj₁ (inj₁ (inj₂ b))) = inj₂ (inj₁ b)
@@ -350,7 +350,7 @@ lemma-04-1 A B R S x xs (inj₁ (inj₂ (inj₂ b))) = inj₁ (inj₂ (inj₂ b)
 lemma-04-1 A B R S x xs (inj₂ b) = inj₂ (inj₂ (inj₂ b))
 
 -----------------------------------------------------------------------------
-lemma-04-2 : {X : Set} → (A B R S : Pred₀ [ X ]) → (x : X) →
+lemma-04-2 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
              (A ⟪ x ⟫ ⨆ B ⨆ R ⨅ S) ⨆ (A ⨆ B ⟪ x ⟫ ⨆ R ⨅ S) ⨆ R · x ⨅ S · x
              ⊆
              (A ⟪ x ⟫ ⨆ B ⟪ x ⟫ ⨆ R ⨅ S) ⨆ R · x ⨅ S · x
@@ -362,20 +362,20 @@ lemma-04-2 A B R S x xs (inj₂ (inj₁ (inj₂ b))) = inj₁ (inj₂ b)
 lemma-04-2 A B R S x xs (inj₂ (inj₂ b)) = inj₂ b
 
 -----------------------------------------------------------------------------
-lemma-04-3 : {X : Set} → (A B R S : Pred₀ [ X ]) → (x : X) →
+lemma-04-3 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
              (A ⟪ x ⟫ ⨆ R · x) ⨆ B ⨆ (R ⨅ S) ⊆ (A ⟪ x ⟫ ⨆ B ⨆ R ⨅ S) ⨆ R · x
 lemma-04-3 A B R S x xs (inj₁ (inj₁ a)) = inj₁ (inj₁ a)
 lemma-04-3 A B R S x xs (inj₁ (inj₂ b)) = inj₂ b
 lemma-04-3 A B R S x xs (inj₂ b) = inj₁ (inj₂ b)
 
-lemma-04-4 : {X : Set} → (A B R S : Pred₀ [ X ]) → (x : X) →
+lemma-04-4 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
              A ⨆ (B ⟪ x ⟫ ⨆ S · x) ⨆ R ⨅ S ⊆ (A ⨆ B ⟪ x ⟫ ⨆ R ⨅ S) ⨆ S · x
 lemma-04-4 A B R S x xs (inj₁ a) = inj₁ (inj₁ a)
 lemma-04-4 A B R S x xs (inj₂ (inj₁ (inj₁ a))) = inj₁ (inj₂ (inj₁ a))
 lemma-04-4 A B R S x xs (inj₂ (inj₁ (inj₂ b))) = inj₂ b
 lemma-04-4 A B R S x xs (inj₂ (inj₂ b)) = inj₁ (inj₂ (inj₂ b))
 
-lemma-04-5 : {X : Set} → (P A R : Pred₀ [ X ]) → (x : X) →
+lemma-04-5 : {X : Set} → (P A R : Pred[ X ]) → (x : X) →
              P ≡ A ⨆ R → P ⟪ x ⟫ ≡ (A ⟪ x ⟫ ⨆ R · x) ⨆ R
 lemma-04-5 P A R x P≡A⨆R = 
    (trans≡ (P ⟪ x ⟫) (A ⟪ x ⟫ ⨆ R ⟪ x ⟫) ((A ⟪ x ⟫ ⨆ R · x) ⨆ R)
@@ -390,7 +390,7 @@ lemma-04-5 P A R x P≡A⨆R =
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-theorem-04' : {X : Set} → (A B R S P Q : Pred₀ [ X ]) → 
+theorem-04' : {X : Set} → (A B R S P Q : Pred[ X ]) → 
               Ar R → Ar S → P ≡ A ⨆ R → Q ≡ B ⨆ S →
               AF P → AF Q → AF(A ⨆ B ⨆ (R ⨅ S))
 -----------------------------------------------------------------------------
@@ -471,7 +471,7 @@ theorem-04' A B R S P Q
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-theorem-04 : {X : Set} → (A B R S : Pred₀ [ X ]) → 
+theorem-04 : {X : Set} → (A B R S : Pred[ X ]) → 
              Ar R → Ar S → AF(A ⨆ R) → AF(B ⨆ S) → AF(A ⨆ B ⨆ (R ⨅ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -481,7 +481,7 @@ theorem-04 = λ A B R S x x' →
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-corollary-05 : {X : Set} → (R S : Pred₀ [ X ]) → 
+corollary-05 : {X : Set} → (R S : Pred[ X ]) → 
                Ar R → Ar S → AF R → AF S → AF(R ⨅ S)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -530,12 +530,12 @@ mapSI f (SI0+1 s) = (f 0) ∷ (mapSI (λ n → f (suc n)) s)
 
 -- Any infinite sequence must have a finite subsequence satisfying P
 -- s is a strictly increasing sequence of positions in α
-Unavoidable : {X : Set} → (P : Pred₀ [ X ]) → Set
+Unavoidable : {X : Set} → (P : Pred[ X ]) → Set
 Unavoidable {X} P =
   (α : ℕ → X) → ∃ (λ (s : StrictIncSeq) → P (mapSI α s))
 
 -- If P is almost full, then P is unavoidable
-AF-Unavoidable : {X : Set} → (P : Pred₀ [ X ]) →
+AF-Unavoidable : {X : Set} → (P : Pred[ X ]) →
                  AF P  → Unavoidable P
 AF-Unavoidable P (leafAF h) f = SIε , h []
 AF-Unavoidable P (indAF x→AfP⟪x⟫) f = 
