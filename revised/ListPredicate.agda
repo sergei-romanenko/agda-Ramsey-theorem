@@ -16,7 +16,7 @@ open import Data.Empty
   using (⊥)
 
 open import Relation.Unary
-  using(Pred; _∪_; _∩_)
+  using(Pred; _∈_; _∪_; _∩_)
   renaming (_⊆′_ to _⊆_)
 
 open import Function
@@ -80,11 +80,11 @@ right-disj-subst A A' B (a , b) =
 
 -- ≋1 A is equivalent with 1# ≋ A
 ≋1-1≋A : {X : Set} → (A : Pred[ X ]) →
-            ≋1 A → (1# ≋ A)
-≋1-1≋A A h = (λ xs h' → h xs) , λ xs h → tt
+            ≋1 A → 1# ≋ A
+≋1-1≋A A h = (λ xs _ → h xs) , (λ xs _ → tt)
 
 1≋A-≋1 : {X : Set} → (A : Pred[ X ]) →
-            (1# ≋ A) → ≋1 A
+            1# ≋ A → ≋1 A
 1≋A-≋1 A (a , b) xs = a xs tt
 
 -----------------------------------------------------------------------------
@@ -134,18 +134,14 @@ subst-⟪⟫≋ A B x (a , b) =
 -----------------------------------------------------------------------------
 distrib-∪-⟪x⟫₁ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
                 (A ∪ B) ⟪ x ⟫ ⊆ A ⟪ x ⟫ ∪ B ⟪ x ⟫
-distrib-∪-⟪x⟫₁ A B x xs (inj₁ (inj₁ a)) = inj₁ (inj₁ a)
-distrib-∪-⟪x⟫₁ A B x xs (inj₁ (inj₂ b)) = inj₂ (inj₁ b)
-distrib-∪-⟪x⟫₁ A B x xs (inj₂ (inj₁ a)) = inj₁ (inj₂ a)
-distrib-∪-⟪x⟫₁ A B x xs (inj₂ (inj₂ b)) = inj₂ (inj₂ b)
+distrib-∪-⟪x⟫₁ A B x xs =
+  [ Sum.map inj₁ inj₁ , Sum.map inj₂ inj₂ ]′
 
 -----------------------------------------------------------------------------
 distrib-∪-⟪x⟫₂ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
     A ⟪ x ⟫ ∪ B ⟪ x ⟫ ⊆ (A ∪ B) ⟪ x ⟫
-distrib-∪-⟪x⟫₂ A B x xs (inj₁ (inj₁ a)) = inj₁ (inj₁ a)
-distrib-∪-⟪x⟫₂ A B x xs (inj₁ (inj₂ b)) = inj₂ (inj₁ b)
-distrib-∪-⟪x⟫₂ A B x xs (inj₂ (inj₁ a)) = inj₁ (inj₂ a)
-distrib-∪-⟪x⟫₂ A B x xs (inj₂ (inj₂ b)) = inj₂ (inj₂ b)
+distrib-∪-⟪x⟫₂ A B x xs =
+  [ Sum.map inj₁ inj₁ , Sum.map inj₂ inj₂ ]′
 
 -----------------------------------------------------------------------------
 distrib-∪-⟪x⟫ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
@@ -161,17 +157,12 @@ distrib-∩-cons A B x = ≋refl ((A ∩ B) ∪ A · x ∩ B · x)
 -----------------------------------------------------------------------------
 monotone-⟪x⟫ : {X : Set} → (A B : Pred[ X ]) → (x : X) → 
                A ⊆ B → A ⟪ x ⟫ ⊆ B ⟪ x ⟫
-monotone-⟪x⟫ A B x h xs (inj₁ h') = inj₁ (h xs h')
-monotone-⟪x⟫ A B x h xs (inj₂ h') = inj₂ (h (x ∷ xs) h')
+monotone-⟪x⟫ A B x h xs = Sum.map (h xs) (h (x ∷ xs))
 
 -----------------------------------------------------------------------------
 distrib-subst∪≋⟪x⟫ : {X : Set} → (P B S : Pred[ X ]) → (x : X) →
                 P ≋ B ∪ S → P ⟪ x ⟫ ≋ B ⟪ x ⟫ ∪ S ⟪ x ⟫
-distrib-subst∪≋⟪x⟫ P B S x (a , b) = 
-  (λ xs h →
-     distrib-∪-⟪x⟫₁ B S x xs
-       (monotone-⟪x⟫ P (B ∪ S) x a xs h)) ,
-     λ xs h →
-         monotone-⟪x⟫ (B ∪ S) P x b xs
-         (distrib-∪-⟪x⟫₂ B S x xs h)
+distrib-subst∪≋⟪x⟫ P B S x (a , b) =
+  (λ xs → (distrib-∪-⟪x⟫₁ B S x xs) ∘ (monotone-⟪x⟫ P (B ∪ S) x a xs)) ,
+  (λ xs → (monotone-⟪x⟫ (B ∪ S) P x b xs) ∘ distrib-∪-⟪x⟫₂ B S x xs)
 -----------------------------------------------------------------------------

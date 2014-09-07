@@ -11,7 +11,7 @@ open import Data.List
 open import Data.Sum as Sum public
   using (_⊎_; inj₁; inj₂; [_,_]′)
 open import Data.Product as Prod
-  using (_×_; _,_; proj₁; proj₂; Σ; ∃; curry; uncurry)
+  using (_×_; _,_; proj₁; proj₂; Σ; ∃; curry; uncurry; <_,_>; _-,-_)
 open import Data.Unit
   using (⊤; tt)
 open import Data.Empty
@@ -32,34 +32,27 @@ open import ListPredicate
 
 -- commutativity of ⊎ and ×
 commut-⊎ : {A B : Set} → A ⊎ B → B ⊎ A
-commut-⊎ (inj₁ a) = inj₂ a
-commut-⊎ (inj₂ b) = inj₁ b
+commut-⊎ = [ inj₂ , inj₁ ]′
 
 commut-× : {A B : Set} → A × B → B × A
-commut-× (a , b) = b , a
+commut-× = < proj₂ , proj₁ >
 
 -- some associativity laws of ⊎
 left-assoc-⊎ : {A B C : Set} → (A ⊎ B) ⊎ C → A ⊎ (B ⊎ C)
-left-assoc-⊎ (inj₁ (inj₁ a)) = inj₁ a
-left-assoc-⊎ (inj₁ (inj₂ b)) = inj₂ (inj₁ b)
-left-assoc-⊎ (inj₂ b) = inj₂ (inj₂ b)
+left-assoc-⊎ = [ [ inj₁ , inj₂ ∘ inj₁ ]′ , inj₂ ∘ inj₂ ]′
 
 right-assoc-⊎ : {A B C : Set} → A ⊎ (B ⊎ C) → (A ⊎ B) ⊎ C
-right-assoc-⊎ (inj₁ a) = inj₁ (inj₁ a)
-right-assoc-⊎ (inj₂ (inj₁ a)) = inj₁ (inj₂ a)
-right-assoc-⊎ (inj₂ (inj₂ b)) = inj₂ b
+right-assoc-⊎ = [ inj₁ ∘ inj₁ , [ inj₁ ∘ inj₂ , inj₂ ]′ ]′
 
 -- a few laws to be used later
 
 A⊎C→B⊎D→A⊎B⊎C×D : {A B C D : Set} → A ⊎ C → B ⊎ D → A ⊎ B ⊎ (C × D)
-A⊎C→B⊎D→A⊎B⊎C×D (inj₁ a) h2 = inj₁ a
-A⊎C→B⊎D→A⊎B⊎C×D (inj₂ b) (inj₁ a) = inj₂ (inj₁ a)
-A⊎C→B⊎D→A⊎B⊎C×D (inj₂ b) (inj₂ b') = inj₂ (inj₂ (b , b'))
+A⊎C→B⊎D→A⊎B⊎C×D =
+  [ flip (const inj₁) ,
+    flip [ flip (const (inj₂ ∘ inj₁)) , curry (inj₂ ∘ inj₂ ∘ commut-×) ]′ ]′
 
 B⊎A⊎D×C→A⊎B⊎C×D : {A B C D : Set} → B ⊎ A ⊎ D × C → A ⊎ B ⊎ C × D
-B⊎A⊎D×C→A⊎B⊎C×D (inj₁ a) = inj₂ (inj₁ a)
-B⊎A⊎D×C→A⊎B⊎C×D (inj₂ (inj₁ a)) = inj₁ a
-B⊎A⊎D×C→A⊎B⊎C×D (inj₂ (inj₂ (a , b))) = inj₂ (inj₂ (b , a))
+B⊎A⊎D×C→A⊎B⊎C×D = [ inj₂ ∘ inj₁ , Sum.map id (inj₂ ∘ commut-×) ]′
 
 ⊥⊎⊥⊎A→A : {A : Set} → ⊥ ⊎ ⊥ ⊎ A → A
 ⊥⊎⊥⊎A→A (inj₁ ())
@@ -69,14 +62,14 @@ B⊎A⊎D×C→A⊎B⊎C×D (inj₂ (inj₂ (a , b))) = inj₂ (inj₂ (b , a))
 -----------------------------------------------------------------------------
 -- n-ary relations
 -----------------------------------------------------------------------------
-nRel : (n : ℕ) → Set → Set₁
-nRel 0 A = Set
-nRel (suc n) A = A → nRel n A
+NRel : (n : ℕ) → Set → Set₁
+NRel zero A = Set
+NRel (suc n) A = A → NRel n A
 
 
 -- conversion from n-ary relations to list n-prefix predicates
 
-fromNRel : {X : Set} → (n : ℕ) → nRel n X → Pred[ X ]
+fromNRel : {X : Set} → (n : ℕ) → NRel n X → Pred[ X ]
 fromNRel zero R xs = R
 fromNRel (suc n) R [] = ⊥
 fromNRel (suc n) R (x ∷ xs) = fromNRel n (R x) xs
@@ -85,30 +78,30 @@ fromNRel (suc n) R (x ∷ xs) = fromNRel n (R x) xs
 
 infixr 14 _⋀_
 
-_⋀_ : {A : Set} → {n : ℕ} → (R S : nRel n A) → nRel n A
+_⋀_ : {A : Set} → {n : ℕ} → (R S : NRel n A) → NRel n A
 _⋀_ {A} {zero} R S = R × S
-_⋀_ {A} {suc n} R S = λ a → (R a ⋀ S a) 
+_⋀_ {A} {suc n} R S = λ (a : A) → (R a ⋀ S a) 
 
 
 -- ⋀ commutes with ∩
 
-commut-⋀-∩₁ : {X : Set} → (n : ℕ) → (R S : nRel n X) →
+commut-⋀-∩₁ : {X : Set} → (n : ℕ) → (R S : NRel n X) →
               fromNRel n R ∩ fromNRel n S ⊆ fromNRel n (R ⋀ S)
 commut-⋀-∩₁ zero R S xs (a , b) = a , b
 commut-⋀-∩₁ (suc n) R S [] (a , b) = b
 commut-⋀-∩₁ (suc n) R S (x ∷ xs) (a , b) = 
   commut-⋀-∩₁ n (R x) (S x) xs (a , b)
 
-commut-⋀-∩₂ : {X : Set} → (n : ℕ) → (R S : nRel n X) →
+commut-⋀-∩₂ : {X : Set} → (n : ℕ) → (R S : NRel n X) →
               fromNRel n (R ⋀ S) ⊆ fromNRel n R ∩ fromNRel n S
 commut-⋀-∩₂ zero R S xs h = h
 commut-⋀-∩₂ (suc n) R S [] h = h , h
 commut-⋀-∩₂ (suc n) R S (x ∷ xs) h =
   commut-⋀-∩₂ n (R x) (S x) xs h
 
-commut-⋀-∩ : {X : Set} → (n : ℕ) → (R S : nRel n X) →
+commut-⋀-∩ : {X : Set} → (n : ℕ) → (R S : NRel n X) →
              fromNRel n R ∩ fromNRel n S ≋ fromNRel n (R ⋀ S)
-commut-⋀-∩ n R S = (λ x → commut-⋀-∩₁ n R S x) , λ x → commut-⋀-∩₂ n R S x
+commut-⋀-∩ n R S = commut-⋀-∩₁ n R S , commut-⋀-∩₂ n R S
 
 
 -----------------------------------------------------------------------------
@@ -127,7 +120,7 @@ data Ar {X : Set} (A : Pred[ X ]) : Set where
 -- since it becomes constant when all the n arguments have been provided.
 
 fromNRel→Ar : {X : Set} → (n : ℕ) →
-              (R : nRel n X) → Ar (fromNRel n R)
+              (R : NRel n X) → Ar (fromNRel n R)
 fromNRel→Ar zero R = leafAr (λ x → (λ x' x0 → x0) , λ x' x0 → x0)
 fromNRel→Ar (suc n) R = indAr (λ x' → fromNRel→Ar n (R x'))
 
@@ -504,7 +497,7 @@ corollary-05 R S h1 h2 h3 h4 =
 -- The n-ary intuitionistic Ramsey Theorem
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-IRT_n : {X : Set} → (n : ℕ) → (R S : nRel n X) →
+IRT_n : {X : Set} → (n : ℕ) → (R S : NRel n X) →
         AF (fromNRel n R) → AF (fromNRel n S) → AF (fromNRel n (R ⋀ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
