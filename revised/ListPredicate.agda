@@ -1,10 +1,35 @@
 
 module ListPredicate where
 
-open import Data.Sum as Sum
-  using ()
+open import Level
+  renaming (zero to lzero; suc to lsuc)
 
-open import Prelude
+open import Data.List
+  using ([]; _∷_) renaming (List to [_])
+open import Data.Sum as Sum
+  using (_⊎_; inj₁; inj₂; [_,_]′)
+open import Data.Product as Prod
+  using (_×_; _,_; proj₁; proj₂; Σ; ∃; curry; uncurry)
+open import Data.Unit
+  using (⊤; tt)
+open import Data.Empty
+  using (⊥)
+
+open import Function
+
+-- Predicates and relations
+
+open import Relation.Unary public
+  using (Pred)
+
+Pred₀ : (A : Set) → Set₁
+Pred₀ A = Pred A lzero
+
+open import Relation.Binary public
+  using (Rel)
+
+Rel₀ : (A : Set) → Set₁
+Rel₀ A = Rel A lzero
 
 -----------------------------------------------------------------------------
 

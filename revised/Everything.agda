@@ -36,10 +36,6 @@ module Everything where
 
 --------------------------------------------------------------------------------
 
--- Some basic types and logical facts
-
-import Prelude
-
 -- A distrubutive lattice D with elements a, b, c, and operations ×
 -- and ⊎, neutral element ₁. In this formalisation D is instantiated
 -- to predicates over finite sequences of a given set X. The following
