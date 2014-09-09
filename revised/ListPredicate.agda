@@ -15,6 +15,9 @@ open import Data.Unit
 open import Data.Empty
   using (⊥)
 
+open import Relation.Binary
+  using (Setoid)
+import Relation.Binary.EqReasoning as EqReasoning
 open import Relation.Unary
   using(Pred; _∈_; _∪_; _∩_)
   renaming (_⊆′_ to _⊆_)
@@ -46,6 +49,15 @@ A ≋ B = A ⊆ B × B ⊆ A
 ≋trans (A⊆B , B⊆A) (B⊆C , C⊆B) =
   (λ xs → B⊆C xs ∘ A⊆B xs) , (λ xs → B⊆A xs ∘ C⊆B xs) 
 
+≋setoid : ∀ {X : Set} (A : Pred[ X ]) → Setoid _ _
+≋setoid {X} A = record
+ { Carrier = Pred[ X ] ;
+   _≈_ = _≋_ ;
+   isEquivalence = record
+   { refl = ≋refl ; sym = ≋sym ; trans = ≋trans } }
+
+module ≋-Reasoning {X : Set} (A : Pred[ X ]) where
+  open EqReasoning (≋setoid A) public
 
 -----------------------------------------------------------------------------
 -- Some special cases of substitutivity
@@ -90,13 +102,13 @@ right-disj-subst (B⊆B′ , B′⊆B) =
 -----------------------------------------------------------------------------
 -- Some list predicate operations to be used in the definition of almost full
 -----------------------------------------------------------------------------
-infix 1020 _·_
+--infix 1020 _·_
 
 _·_ : {X : Set} → Pred[ X ] → X → Pred[ X ]
 P · x = λ xs → P (x ∷ xs)
 
 -----------------------------------------------------------------------------
-infix 1030 _⟪_⟫
+--infix 1030 _⟪_⟫
 
 _⟪_⟫ : {X : Set} → Pred[ X ] → X → Pred[ X ]
 P ⟪ x ⟫ = P ∪ P · x
