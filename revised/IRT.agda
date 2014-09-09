@@ -152,7 +152,7 @@ lemma-01 A B hA⊆B (leafAF p) =
   leafAF (λ xs → hA⊆B xs (p xs))
 lemma-01 A B hA⊆B (indAF f) = 
   indAF (λ x → lemma-01 (A ⟪ x ⟫) (B ⟪ x ⟫)
-                        (monotone-⟪x⟫ A B x hA⊆B) (f x))
+                        (monotone-⟪x⟫ x hA⊆B) (f x))
 
 -----------------------------------------------------------------------------
 -- preparation for lemma-02
@@ -227,7 +227,7 @@ lemma-02' P A B R S P≋B∪S A∪R (indAF afPx) =
       (A ∪ B ⟪ x ⟫ ∪ R ∩ S ⟪ x ⟫) (((A ∪ B ∪ R ∩ S) ⟪ x ⟫)) 
       (lemma-02-2 A B R S x A∪R)
       (lemma-02' (P ⟪ x ⟫) A (B ⟪ x ⟫) R (S ⟪ x ⟫)
-                 (distrib-subst∪≋⟪x⟫ P B S x P≋B∪S) A∪R (afPx x)))
+                 (distrib-subst∪≋⟪x⟫ x P≋B∪S) A∪R (afPx x)))
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -300,7 +300,7 @@ lemma-03' P A B R S Rx≋R (indAF h) P≋A∪R AF-B∪S =
                                  (h x)
                                  -- A≋B∪C → C≋D → A≋B∪D
                                  (lemma-03-4 (P ⟪ x ⟫) (A ⟪ x ⟫) (R ⟪ x ⟫) R
-                                   (distrib-subst∪≋⟪x⟫ P A R x P≋A∪R) 
+                                   (distrib-subst∪≋⟪x⟫ x P≋A∪R) 
                                    (lemma-03-2 R x (Rx≋R x)))
                                  AF-B∪S)))
 
@@ -368,15 +368,11 @@ lemma-04-4 A B R S x xs (inj₂ (inj₂ b)) = inj₁ (inj₂ (inj₂ b))
 lemma-04-5 : {X : Set} → (P A R : Pred[ X ]) → (x : X) →
              P ≋ A ∪ R → P ⟪ x ⟫ ≋ (A ⟪ x ⟫ ∪ R · x) ∪ R
 lemma-04-5 P A R x P≋A∪R = 
-   (≋trans (P ⟪ x ⟫) (A ⟪ x ⟫ ∪ R ⟪ x ⟫) ((A ⟪ x ⟫ ∪ R · x) ∪ R)
-                      (distrib-subst∪≋⟪x⟫ P A R x P≋A∪R)
-                      (≋trans (A ⟪ x ⟫ ∪ R ⟪ x ⟫)
-                               (A ⟪ x ⟫ ∪ (R · x ∪ R))
-                               ((A ⟪ x ⟫ ∪ R · x) ∪ R)
-                        (right-disj-subst (A ⟪ x ⟫)
-                           (R ⟪ x ⟫) (R · x ∪ R)
-                           ((λ _ → commut-⊎) , λ _ → commut-⊎))
-                        ((λ _ → right-assoc-⊎) , λ _ → left-assoc-⊎)))
+   (≋trans
+     (distrib-subst∪≋⟪x⟫ x P≋A∪R)
+     (≋trans                               
+       (right-disj-subst ((λ _ → commut-⊎) , λ _ → commut-⊎))
+                         ((λ _ → right-assoc-⊎) , λ _ → left-assoc-⊎)))
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------

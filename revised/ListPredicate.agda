@@ -37,27 +37,27 @@ A ≋ B = A ⊆ B × B ⊆ A
 ≋refl : {X : Set} {A : Pred[ X ]} → A ≋ A
 ≋refl = (λ xs → id) , (λ xs → id)
 
-≋sym : {X : Set} → (A B : Pred[ X ]) →
+≋sym : {X : Set} {A B : Pred[ X ]} →
         A ≋ B → B ≋ A
-≋sym A B (A⊆B , B⊆A) = B⊆A , A⊆B 
+≋sym (A⊆B , B⊆A) = B⊆A , A⊆B 
 
-≋trans : {X : Set} → (A B C : Pred[ X ]) →
+≋trans : {X : Set} {A B C : Pred[ X ]} →
          A ≋ B → B ≋ C → A ≋ C
-≋trans A B C (A⊆B , B⊆A) (B⊆C , C⊆B) =
+≋trans (A⊆B , B⊆A) (B⊆C , C⊆B) =
   (λ xs → B⊆C xs ∘ A⊆B xs) , (λ xs → B⊆A xs ∘ C⊆B xs) 
 
 
 -----------------------------------------------------------------------------
 -- Some special cases of substitutivity
 
-left-disj-subst : {X : Set} → (A A′ B : Pred[ X ]) →
+left-disj-subst : {X : Set} {A A′ B : Pred[ X ]} →
                   A ≋ A′ → A ∪ B ≋ A′ ∪ B
-left-disj-subst A A′ B (A⊆A′ , A′⊆A) = 
+left-disj-subst (A⊆A′ , A′⊆A) = 
   (λ xs → Sum.map (A⊆A′ xs) id) , (λ xs → Sum.map (A′⊆A xs) id)
 
-right-disj-subst : {X : Set} → (A B B′ : Pred[ X ]) →
+right-disj-subst : {X : Set} {A B B′ : Pred[ X ]} →
                    B ≋ B′ → A ∪ B ≋ A ∪ B′
-right-disj-subst A A′ B (B⊆B′ , B′⊆B) =
+right-disj-subst (B⊆B′ , B′⊆B) =
   (λ xs → Sum.map id (B⊆B′ xs)) , (λ xs → Sum.map id (B′⊆B xs))
 
 -----------------------------------------------------------------------------
@@ -119,50 +119,51 @@ unitCons x = ≋refl
 -----------------------------------------------------------------------------
 -- substitutivity of _≋_ for _·_ and _⟪_⟫ 
 -----------------------------------------------------------------------------
-subst-·≋ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+subst-·≋ : {X : Set} {A B : Pred[ X ]} → (x : X) →
             A ≋ B → A · x ≋ B · x
-subst-·≋ A B x (a , b) = (λ xs → a (x ∷ xs)) , (λ xs → b (x ∷ xs))
+subst-·≋ x (a , b) = (λ xs → a (x ∷ xs)) , (λ xs → b (x ∷ xs))
 
 -----------------------------------------------------------------------------
-subst-⟪⟫≋ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+subst-⟪⟫≋ : {X : Set} {A B : Pred[ X ]} → (x : X) →
             A ≋ B → A ⟪ x ⟫ ≋ B ⟪ x ⟫
-subst-⟪⟫≋ A B x (a , b) =
+subst-⟪⟫≋ x (a , b) =
   (λ xs → Sum.map (a xs) (a (x ∷ xs))) , (λ xs → Sum.map (b xs) (b (x ∷ xs)))
 
 -----------------------------------------------------------------------------
 -- Some properties about _⟪_⟫ and _·_
 -----------------------------------------------------------------------------
-distrib-∪-⟪x⟫₁ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+distrib-∪-⟪x⟫₁ : {X : Set} {A B : Pred[ X ]} (x : X) →
                 (A ∪ B) ⟪ x ⟫ ⊆ A ⟪ x ⟫ ∪ B ⟪ x ⟫
-distrib-∪-⟪x⟫₁ A B x xs =
+distrib-∪-⟪x⟫₁ x xs =
   [ Sum.map inj₁ inj₁ , Sum.map inj₂ inj₂ ]′
 
 -----------------------------------------------------------------------------
-distrib-∪-⟪x⟫₂ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+distrib-∪-⟪x⟫₂ : {X : Set} {A B : Pred[ X ]} (x : X) →
     A ⟪ x ⟫ ∪ B ⟪ x ⟫ ⊆ (A ∪ B) ⟪ x ⟫
-distrib-∪-⟪x⟫₂ A B x xs =
+distrib-∪-⟪x⟫₂ x xs =
   [ Sum.map inj₁ inj₁ , Sum.map inj₂ inj₂ ]′
 
 -----------------------------------------------------------------------------
-distrib-∪-⟪x⟫ : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+distrib-∪-⟪x⟫ : {X : Set} {A B : Pred[ X ]} (x : X) →
   (A ∪ B) ⟪ x ⟫ ≋ A ⟪ x ⟫ ∪ B ⟪ x ⟫
-distrib-∪-⟪x⟫ A B x = distrib-∪-⟪x⟫₁ A B x , distrib-∪-⟪x⟫₂ A B x
+distrib-∪-⟪x⟫ {X} {A} {B} x = distrib-∪-⟪x⟫₁ x , distrib-∪-⟪x⟫₂ x
 
 -----------------------------------------------------------------------------
 -- this one is not used, but mentioned in Coquand's note:
-distrib-∩-cons : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+distrib-∩-cons : {X : Set} {A B : Pred[ X ]} (x : X) →
                (A ∩ B) ∪ A · x ∩ B · x ≋ (A ∩ B) ⟪ x ⟫
-distrib-∩-cons A B x = ≋refl
+distrib-∩-cons x = ≋refl
 
 -----------------------------------------------------------------------------
-monotone-⟪x⟫ : {X : Set} → (A B : Pred[ X ]) → (x : X) → 
+monotone-⟪x⟫ : {X : Set} {A B : Pred[ X ]} (x : X) → 
                A ⊆ B → A ⟪ x ⟫ ⊆ B ⟪ x ⟫
-monotone-⟪x⟫ A B x h xs = Sum.map (h xs) (h (x ∷ xs))
+monotone-⟪x⟫ x h xs = Sum.map (h xs) (h (x ∷ xs))
 
 -----------------------------------------------------------------------------
-distrib-subst∪≋⟪x⟫ : {X : Set} → (P B S : Pred[ X ]) → (x : X) →
+distrib-subst∪≋⟪x⟫ : {X : Set} {P B S : Pred[ X ]} (x : X) →
                 P ≋ B ∪ S → P ⟪ x ⟫ ≋ B ⟪ x ⟫ ∪ S ⟪ x ⟫
-distrib-subst∪≋⟪x⟫ P B S x (a , b) =
-  (λ xs → (distrib-∪-⟪x⟫₁ B S x xs) ∘ (monotone-⟪x⟫ P (B ∪ S) x a xs)) ,
-  (λ xs → (monotone-⟪x⟫ (B ∪ S) P x b xs) ∘ distrib-∪-⟪x⟫₂ B S x xs)
+distrib-subst∪≋⟪x⟫ {X} {P} {B} {S} x (a , b) =
+  (λ xs → (distrib-∪-⟪x⟫₁ {X} {B} {S} x xs) ∘ (monotone-⟪x⟫ x a xs)) ,
+  (λ xs → (monotone-⟪x⟫ x b xs) ∘ distrib-∪-⟪x⟫₂ {X} {B} {S} x xs)
+
 -----------------------------------------------------------------------------
