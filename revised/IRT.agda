@@ -21,8 +21,8 @@ open import Relation.Unary
   using(Pred; _∈_; _∪_; _∩_)
   renaming (_⊆′_ to _⊆_)
 
-
 open import Function
+import Function.Related as Related
 
 open import ListPredicate
 
@@ -39,10 +39,10 @@ commut-× = < proj₂ , proj₁ >
 
 -- some associativity laws of ⊎
 left-assoc-⊎ : {A B C : Set} → (A ⊎ B) ⊎ C → A ⊎ (B ⊎ C)
-left-assoc-⊎ = [ [ inj₁ , inj₂ ∘ inj₁ ]′ , inj₂ ∘ inj₂ ]′
+left-assoc-⊎ = [ Sum.map id inj₁ , inj₂ ∘ inj₂ ]′
 
 right-assoc-⊎ : {A B C : Set} → A ⊎ (B ⊎ C) → (A ⊎ B) ⊎ C
-right-assoc-⊎ = [ inj₁ ∘ inj₁ , [ inj₁ ∘ inj₂ , inj₂ ]′ ]′
+right-assoc-⊎ = [ inj₁ ∘ inj₁ , Sum.map inj₂ id ]′
 
 -- a few laws to be used later
 
@@ -112,8 +112,8 @@ commut-⋀-∩ n R S = commut-⋀-∩₁ n R S , commut-⋀-∩₂ n R S
 -- constant.
 -----------------------------------------------------------------------------
 data Ar {X : Set} (A : Pred[ X ]) : Set where
-  leafAr : (∀ x → (A · x) ≋ A) → Ar A
-  indAr  : (∀ x → Ar (A · x)) → Ar A
+  ar-now   : (∀ x → (A · x) ≋ A) → Ar A
+  ar-later : (∀ x → Ar (A · x)) → Ar A
 
 
 -- The list predicate derived from an n-ary relation is Ar,
@@ -121,16 +121,16 @@ data Ar {X : Set} (A : Pred[ X ]) : Set where
 
 fromNRel→Ar : {X : Set} → (n : ℕ) →
               (R : NRel n X) → Ar (fromNRel n R)
-fromNRel→Ar zero R = leafAr (const (flip const , flip const))
-fromNRel→Ar (suc n) R = indAr (fromNRel→Ar n ∘ R)
+fromNRel→Ar zero R = ar-now (const (flip const , flip const))
+fromNRel→Ar (suc n) R = ar-later (fromNRel→Ar n ∘ R)
 
 
 -----------------------------------------------------------------------------
 -- Almost full relations. Like a Well-Quasi ordering, without transitivity
 -----------------------------------------------------------------------------
 data AF {X : Set} (A : Pred[ X ]) : Set where
-  leafAF : 𝟙≋ A → AF A
-  indAF : ((x : X) → AF (A ⟪ x ⟫)) → AF A
+  af-now : 𝟙≋ A → AF A
+  af-later : ((x : X) → AF (A ⟪ x ⟫)) → AF A
 
 
 -- By P is monotone, we mean: (A → B) → P(A) → P(B)
@@ -148,10 +148,10 @@ monotone {ℓ} {X} P = {A B : Pred X ℓ} →
 -----------------------------------------------------------------------------
 mono-AF : {X : Set} → monotone (AF {X})
 -----------------------------------------------------------------------------
-mono-AF A⊆B (leafAF p) =
-  leafAF (λ xs → A⊆B xs (p xs))
-mono-AF A⊆B (indAF f) =
-  indAF (λ x → mono-AF (monotone-⟪x⟫ x A⊆B) (f x))
+mono-AF A⊆B (af-now p) =
+  af-now (λ xs → A⊆B xs (p xs))
+mono-AF A⊆B (af-later f) =
+  af-later (λ x → mono-AF (monotone-⟪x⟫ x A⊆B) (f x))
 
 -----------------------------------------------------------------------------
 -- preparation for lemma-02
@@ -188,15 +188,15 @@ lemma-02' : {X : Set} → (P A B R S : Pred[ X ]) → P ≋ B ∪ S →
             𝟙≋ (A ∪ R) → AF P → AF (A ∪ B ∪ (R ∩ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02' P A B R S P≋B∪S A∪R (leafAF h) = 
-  leafAF (λ xs → 
+lemma-02' P A B R S P≋B∪S A∪R (af-now h) = 
+  af-now (λ xs → 
     lemma-02-1
       (λ ys → A∪R xs)
       (λ ys → uncurry (λ a b → a xs (h xs)) P≋B∪S)
       xs)
 
-lemma-02' P A B R S P≋B∪S A∪R (indAF afPx) = 
-  indAF (λ x → 
+lemma-02' P A B R S P≋B∪S A∪R (af-later afPx) = 
+  af-later (λ x → 
     mono-AF
       (lemma-02-2 A B R S x A∪R)
       (lemma-02' (P ⟪ x ⟫) A (B ⟪ x ⟫) R (S ⟪ x ⟫)
@@ -253,13 +253,13 @@ lemma-03' : {X : Set} → (P A B R S : Pred[ X ]) →
             AF (A ∪ B ∪ R ∩ S)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03' P A B R S Rx≋R (leafAF h) h' AF-B∪S = 
+lemma-03' P A B R S Rx≋R (af-now h) h' AF-B∪S = 
   lemma-02 A B R S
     (λ xs → proj₂ ((h xs) , uncurry (λ a b → a xs (h xs)) h'))
     AF-B∪S
 
-lemma-03' P A B R S Rx≋R (indAF h) P≋A∪R AF-B∪S = 
-  indAF (λ x →
+lemma-03' P A B R S Rx≋R (af-later h) P≋A∪R AF-B∪S = 
+  af-later (λ x →
     mono-AF (lemma-03-1 A B R S x (lemma-03-2 R x (Rx≋R x)))
             (mono-AF -- use R ⟪ x ⟫ ≋ R
                      (lemma-03-3 (A ⟪ x ⟫) B (R ⟪ x ⟫) R S 
@@ -272,6 +272,7 @@ lemma-03' P A B R S Rx≋R (indAF h) P≋A∪R AF-B∪S =
                                   (distrib-subst∪≋⟪x⟫ x P≋A∪R) 
                                   (lemma-03-2 R x (Rx≋R x)))
                                 AF-B∪S)))
+  
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -297,40 +298,31 @@ lemma-03-sym A B R S h1 h2 h3 =
 -- preparation for theorem-04
 -----------------------------------------------------------------------------
 lemma-04-1 :
-  {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
+  {X : Set} (A B R S : Pred[ X ]) (x : X) →
   (A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ (R ∩ S)) ∪ (R · x ∩ S · x) ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
-lemma-04-1 A B R S x xs (inj₁ (inj₁ (inj₁ a))) = inj₁ (inj₁ a)
-lemma-04-1 A B R S x xs (inj₁ (inj₁ (inj₂ b))) = inj₂ (inj₁ b)
-lemma-04-1 A B R S x xs (inj₁ (inj₂ (inj₁ (inj₁ a)))) = inj₁ (inj₂ (inj₁ a))
-lemma-04-1 A B R S x xs (inj₁ (inj₂ (inj₁ (inj₂ b)))) = inj₂ (inj₂ (inj₁ b))
-lemma-04-1 A B R S x xs (inj₁ (inj₂ (inj₂ b))) = inj₁ (inj₂ (inj₂ b))
-lemma-04-1 A B R S x xs (inj₂ b) = inj₂ (inj₂ (inj₂ b))
+lemma-04-1 A B R S x xs =
+  [ [ Sum.map inj₁ inj₁ ,
+      [ Sum.map (inj₂ ∘ inj₁) (inj₂ ∘ inj₁) , inj₁ ∘ inj₂ ∘ inj₂ ]′ ]′ ,
+    inj₂ ∘ inj₂ ∘ inj₂ ]′
 
 -----------------------------------------------------------------------------
-lemma-04-2 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
+lemma-04-2 : {X : Set} (A B R S : Pred[ X ]) (x : X) →
              (A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ (A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ R · x ∩ S · x
              ⊆
              (A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ R · x ∩ S · x
-lemma-04-2 A B R S x xs (inj₁ (inj₁ a)) = inj₁ (inj₁ a)
-lemma-04-2 A B R S x xs (inj₁ (inj₂ (inj₁ a))) = inj₁ (inj₂ (inj₁ (inj₁ a)))
-lemma-04-2 A B R S x xs (inj₁ (inj₂ (inj₂ b))) = inj₁ (inj₂ (inj₂ b))
-lemma-04-2 A B R S x xs (inj₂ (inj₁ (inj₁ a))) = inj₁ (inj₁ (inj₁ a))
-lemma-04-2 A B R S x xs (inj₂ (inj₁ (inj₂ b))) = inj₁ (inj₂ b)
-lemma-04-2 A B R S x xs (inj₂ (inj₂ b)) = inj₂ b
+lemma-04-2 A B R S x xs =
+  [ inj₁ ∘ [ inj₁ , inj₂ ∘ Sum.map inj₁ id ]′ , Sum.map (Sum.map inj₁ id) id ]′
 
 -----------------------------------------------------------------------------
 lemma-04-3 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
              (A ⟪ x ⟫ ∪ R · x) ∪ B ∪ (R ∩ S) ⊆ (A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ R · x
-lemma-04-3 A B R S x xs (inj₁ (inj₁ a)) = inj₁ (inj₁ a)
-lemma-04-3 A B R S x xs (inj₁ (inj₂ b)) = inj₂ b
-lemma-04-3 A B R S x xs (inj₂ b) = inj₁ (inj₂ b)
+lemma-04-3 A B R S x xs =
+  [ Sum.map inj₁ id , inj₁ ∘ inj₂ ]′
 
 lemma-04-4 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
              A ∪ (B ⟪ x ⟫ ∪ S · x) ∪ R ∩ S ⊆ (A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ S · x
-lemma-04-4 A B R S x xs (inj₁ a) = inj₁ (inj₁ a)
-lemma-04-4 A B R S x xs (inj₂ (inj₁ (inj₁ a))) = inj₁ (inj₂ (inj₁ a))
-lemma-04-4 A B R S x xs (inj₂ (inj₁ (inj₂ b))) = inj₂ b
-lemma-04-4 A B R S x xs (inj₂ (inj₂ b)) = inj₁ (inj₂ (inj₂ b))
+lemma-04-4 A B R S x xs =
+  [ inj₁ ∘ inj₁ , [ Sum.map (inj₂ ∘ inj₁) id , inj₁ ∘ inj₂ ∘ inj₂ ]′ ]′
 
 lemma-04-5 : {X : Set} → (P A R : Pred[ X ]) → (x : X) →
              P ≋ A ∪ R → P ⟪ x ⟫ ≋ (A ⟪ x ⟫ ∪ R · x) ∪ R
@@ -349,29 +341,30 @@ theorem-04' : {X : Set} → (A B R S P Q : Pred[ X ]) →
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 theorem-04'
-  A B R S P Q (leafAr h) ArS (P⊆A∪R , A∪R⊆P) (Q⊆B∪S , B∪S⊆Q) AfP AfQ = 
+  A B R S P Q (ar-now h) ArS (P⊆A∪R , A∪R⊆P) (Q⊆B∪S , B∪S⊆Q) AfP AfQ = 
     lemma-03 A B R S h 
       (mono-AF P⊆A∪R AfP)
       (mono-AF Q⊆B∪S AfQ)
 theorem-04'
-  A B R S P Q (indAr h) (leafAr h')
+  A B R S P Q (ar-later h) (ar-now h')
   (P⊆A∪R , A∪R⊆P) (Q⊆B∪S , B∪S⊆Q) AfP AfQ = 
     lemma-03-sym A B R S h'
       (mono-AF P⊆A∪R AfP)
       (mono-AF Q⊆B∪S AfQ)
 theorem-04' A B R S P Q
-  (indAr h1) (indAr h2) (P⊆A∪R , A∪R⊆P) (Q⊆B∪S , B∪S⊆Q) (leafAF h3) AfQ = 
+  (ar-later h1) (ar-later h2)
+  (P⊆A∪R , A∪R⊆P) (Q⊆B∪S , B∪S⊆Q) (af-now h3) AfQ = 
     lemma-02 A B R S 
       (λ xs → P⊆A∪R xs (h3 xs)) (mono-AF Q⊆B∪S AfQ)
 theorem-04' A B R S P Q
-  (indAr h1) (indAr h2) (P⊆A∪R , A∪R⊆P) (Q⊆B∪S , B∪S⊆Q)
-  (indAF h3) (leafAF h4) =
+  (ar-later h1) (ar-later h2) (P⊆A∪R , A∪R⊆P) (Q⊆B∪S , B∪S⊆Q)
+  (af-later h3) (af-now h4) =
     lemma-02-sym A B R S
       (λ xs → Q⊆B∪S xs (h4 xs))
-      (mono-AF P⊆A∪R (indAF h3))
+      (mono-AF P⊆A∪R (af-later h3))
 theorem-04' A B R S P Q
-  (indAr h1) (indAr h2) P≋A∪R Q≋B∪S (indAF h3) (indAF h4) =
-    indAF (λ x → 
+  (ar-later h1) (ar-later h2) P≋A∪R Q≋B∪S (af-later h3) (af-later h4) =
+    af-later (λ x → 
       mono-AF 
         (lemma-04-1 A B R S x)
         (mono-AF
@@ -394,12 +387,12 @@ theorem-04' A B R S P Q
                -- AF ((A ⟪ x ⟫ ∪ R · x) ∪ B ∪ R ∩ S)
                (theorem-04' (A ⟪ x ⟫ ∪ R · x) B R S
                  (P ⟪ x ⟫) Q
-                 (indAr h1) (indAr h2)
+                 (ar-later h1) (ar-later h2)
                  -- P ⟪ x ⟫ ≋ (A ⟪ x ⟫ ∪ R · x) ∪ R
                  (lemma-04-5 P A R x P≋A∪R)
                  Q≋B∪S
                  (h3 x)
-                 (indAF h4)))
+                 (af-later h4)))
              -- Goal: AF ((A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ S · x)
              -- we use AF (B ⟪ x ⟫ ∪ S · x ∪ S) and AF (A ∪ R)
              (mono-AF
@@ -407,10 +400,10 @@ theorem-04' A B R S P Q
                -- AF (A ∪ S · x ∪ B ⟪ x ⟫ ∪ R ∩ S)
                (theorem-04' A (B ⟪ x ⟫ ∪ S · x) R S
                  P (Q ⟪ x ⟫)
-                 (indAr h1) (indAr h2)
+                 (ar-later h1) (ar-later h2)
                  P≋A∪R
                  (lemma-04-5 Q B S x Q≋B∪S)
-                 (indAF h3)
+                 (af-later h3)
                  (h4 x))))))
 
 -----------------------------------------------------------------------------
@@ -478,8 +471,8 @@ Unavoidable {X} P =
 -- If P is almost full, then P is unavoidable
 AF-Unavoidable : {X : Set} → (P : Pred[ X ]) →
                  AF P  → Unavoidable P
-AF-Unavoidable P (leafAF h) f = SIε , h []
-AF-Unavoidable P (indAF x→AfP⟪x⟫) f = 
+AF-Unavoidable P (af-now h) f = SIε , h []
+AF-Unavoidable P (af-later x→AfP⟪x⟫) f = 
   let rem0 : ∃ (λ s → (P ⟪ f zero ⟫) (mapSI (λ x → f (suc x)) s))
       rem0 = AF-Unavoidable (P ⟪ f 0 ⟫) (x→AfP⟪x⟫ (f 0)) (λ x → f (suc x))
       s0 : StrictIncSeq

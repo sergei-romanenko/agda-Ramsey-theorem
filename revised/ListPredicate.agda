@@ -65,12 +65,12 @@ module ≋-Reasoning {X : Set} (A : Pred[ X ]) where
 left-disj-subst : {X : Set} {A A′ B : Pred[ X ]} →
                   A ≋ A′ → A ∪ B ≋ A′ ∪ B
 left-disj-subst (A⊆A′ , A′⊆A) = 
-  (λ xs → Sum.map (A⊆A′ xs) id) , (λ xs → Sum.map (A′⊆A xs) id)
+  flip Sum.map id ∘ A⊆A′ , flip Sum.map id ∘ A′⊆A
 
 right-disj-subst : {X : Set} {A B B′ : Pred[ X ]} →
                    B ≋ B′ → A ∪ B ≋ A ∪ B′
 right-disj-subst (B⊆B′ , B′⊆B) =
-  (λ xs → Sum.map id (B⊆B′ xs)) , (λ xs → Sum.map id (B′⊆B xs))
+  Sum.map id ∘ B⊆B′ , Sum.map id ∘ B′⊆B
 
 -----------------------------------------------------------------------------
 
@@ -91,13 +91,13 @@ right-disj-subst (B⊆B′ , B′⊆B) =
 𝟙≋ A = ∀ xs → A xs
 
 -- 𝟙≋ A is equivalent with 𝟙 ≋ A
-𝟙≋-𝟙≋A : {X : Set} → (A : Pred[ X ]) →
+𝟙≋⇒𝟙≋A : {X : Set} → (A : Pred[ X ]) →
             𝟙≋ A → 𝟙 ≋ A
-𝟙≋-𝟙≋A A 𝟙≋-A = const ∘ 𝟙≋-A , (λ xs → const tt)
+𝟙≋⇒𝟙≋A A 𝟙≋-A = const ∘ 𝟙≋-A , (λ xs → const tt)
 
-𝟙≋A-𝟙≋ : {X : Set} → (A : Pred[ X ]) →
+𝟙≋A⇒𝟙≋ : {X : Set} → (A : Pred[ X ]) →
             𝟙 ≋ A → 𝟙≋ A
-𝟙≋A-𝟙≋ A (𝟙⊆A , A⊆𝟙) xs = 𝟙⊆A xs tt
+𝟙≋A⇒𝟙≋ A (𝟙⊆A , A⊆𝟙) xs = 𝟙⊆A xs tt
 
 -----------------------------------------------------------------------------
 -- Some list predicate operations to be used in the definition of almost full
@@ -116,16 +116,16 @@ P ⟪ x ⟫ = P ∪ P · x
 -----------------------------------------------------------------------------
 -- Some properties
 -----------------------------------------------------------------------------
-consDisj : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+consDisj : {X : Set} (A B : Pred[ X ]) (x : X) →
            ((A ∪ B) · x) ≋ (A · x ∪ B · x)
 consDisj A B x = ≋refl
 
 -- the following two are not used:
-consConj : {X : Set} → (A B : Pred[ X ]) → (x : X) →
+consConj : {X : Set} (A B : Pred[ X ]) (x : X) →
            ((A ∩ B) · x) ≋ (A · x ∩ B · x)
 consConj A B x = ≋refl
 
-unitCons : {X : Set} → (x : X) → (𝟙 · x) ≋ 𝟙
+unitCons : {X : Set} (x : X) → (𝟙 · x) ≋ 𝟙
 unitCons x = ≋refl
 
 -----------------------------------------------------------------------------
@@ -133,7 +133,7 @@ unitCons x = ≋refl
 -----------------------------------------------------------------------------
 subst-·≋ : {X : Set} {A B : Pred[ X ]} → (x : X) →
             A ≋ B → A · x ≋ B · x
-subst-·≋ x (a , b) = (λ xs → a (x ∷ xs)) , (λ xs → b (x ∷ xs))
+subst-·≋ x (a , b) = a ∘ _∷_ x , b ∘ _∷_ x
 
 -----------------------------------------------------------------------------
 subst-⟪⟫≋ : {X : Set} {A B : Pred[ X ]} → (x : X) →
@@ -158,7 +158,7 @@ distrib-∪-⟪x⟫₂ x xs =
 -----------------------------------------------------------------------------
 distrib-∪-⟪x⟫ : {X : Set} {A B : Pred[ X ]} (x : X) →
   (A ∪ B) ⟪ x ⟫ ≋ A ⟪ x ⟫ ∪ B ⟪ x ⟫
-distrib-∪-⟪x⟫ {X} {A} {B} x = distrib-∪-⟪x⟫₁ x , distrib-∪-⟪x⟫₂ x
+distrib-∪-⟪x⟫ x = distrib-∪-⟪x⟫₁ x , distrib-∪-⟪x⟫₂ x
 
 -----------------------------------------------------------------------------
 -- this one is not used, but mentioned in Coquand's note:
