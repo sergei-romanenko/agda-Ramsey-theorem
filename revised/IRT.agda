@@ -20,6 +20,7 @@ open import Data.Empty
 open import Relation.Unary
   using(Pred; _∈_; _∪_; _∩_)
   renaming (_⊆′_ to _⊆_)
+open import Relation.Binary.PropositionalEquality
 
 open import Function
 import Function.Related as Related
@@ -112,8 +113,8 @@ commut-⋀-∩ n R S = commut-⋀-∩₁ n R S , commut-⋀-∩₂ n R S
 -- constant.
 -----------------------------------------------------------------------------
 data Ar {X : Set} (A : Pred[ X ]) : Set where
-  ar-now   : (∀ x → (A · x) ≋ A) → Ar A
-  ar-later : (∀ x → Ar (A · x)) → Ar A
+  ar-now   : (n : ∀ x → (A · x) ≋ A) → Ar A
+  ar-later : (l : ∀ x → Ar (A · x)) → Ar A
 
 
 -- The list predicate derived from an n-ary relation is Ar,
@@ -129,8 +130,8 @@ fromNRel→Ar (suc n) R = ar-later (fromNRel→Ar n ∘ R)
 -- Almost full relations. Like a Well-Quasi ordering, without transitivity
 -----------------------------------------------------------------------------
 data AF {X : Set} (A : Pred[ X ]) : Set where
-  af-now : 𝟙≋ A → AF A
-  af-later : ((x : X) → AF (A ⟪ x ⟫)) → AF A
+  af-now :   (n : 𝟙≋ A) → AF A
+  af-later : (l : (x : X) → AF (A ⟪ x ⟫)) → AF A
 
 
 -- By P is monotone, we mean: (A → B) → P(A) → P(B)
@@ -151,7 +152,7 @@ mono-AF : {X : Set} → monotone (AF {X})
 mono-AF A⊆B (af-now p) =
   af-now (λ xs → A⊆B xs (p xs))
 mono-AF A⊆B (af-later f) =
-  af-later (λ x → mono-AF (monotone-⟪x⟫ x A⊆B) (f x))
+  af-later (λ x → mono-AF (mono-⟪⟫ x A⊆B) (f x))
 
 -----------------------------------------------------------------------------
 -- preparation for lemma-02
@@ -184,23 +185,19 @@ lemma-02-2 A B R S x h1 xs h2 =
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02' : {X : Set} → (P A B R S : Pred[ X ]) → P ≋ B ∪ S →
+lemma-02' : {X : Set} → (P A B R S : Pred[ X ]) → P ⊆ B ∪ S →
             𝟙≋ (A ∪ R) → AF P → AF (A ∪ B ∪ (R ∩ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02' P A B R S P≋B∪S A∪R (af-now h) = 
-  af-now (λ xs → 
-    lemma-02-1
-      (λ ys → A∪R xs)
-      (λ ys → uncurry (λ a b → a xs (h xs)) P≋B∪S)
-      xs)
+lemma-02' P A B R S P⊆B∪S A∪R (af-now 𝟙≋P) =
+  af-now (λ xs → lemma-02-1 (λ ys → A∪R xs) (λ ys → 𝟙≋-⊆⇒𝟙≋ 𝟙≋P P⊆B∪S ys) xs)
 
-lemma-02' P A B R S P≋B∪S A∪R (af-later afPx) = 
+lemma-02' P A B R S P⊆B∪S A∪R (af-later afPx) = 
   af-later (λ x → 
     mono-AF
       (lemma-02-2 A B R S x A∪R)
       (lemma-02' (P ⟪ x ⟫) A (B ⟪ x ⟫) R (S ⟪ x ⟫)
-                 (distrib-subst∪≋⟪x⟫ x P≋B∪S) A∪R (afPx x)))
+                 (subst-∪⟪⟫⊆ x P⊆B∪S) A∪R (afPx x)))
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -209,8 +206,7 @@ lemma-02 : {X : Set} (A B R S : Pred[ X ]) →
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 lemma-02 A B R S =
-  lemma-02' _ _ _ _ _ ≋refl
-
+  lemma-02' (B ∪ S) A B R S (λ xs h → h)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 lemma-02-sym : {X : Set} → (A B R S : Pred[ X ]) →
@@ -269,7 +265,7 @@ lemma-03' P A B R S Rx≋R (af-later h) P≋A∪R AF-B∪S =
                                 (h x)
                                  -- A≋B∪C → C≋D → A≋B∪D
                                 (lemma-03-4 (P ⟪ x ⟫) (A ⟪ x ⟫) (R ⟪ x ⟫) R
-                                  (distrib-subst∪≋⟪x⟫ x P≋A∪R) 
+                                  (subst-∪≋⟪⟫ x P≋A∪R) 
                                   (lemma-03-2 R x (Rx≋R x)))
                                 AF-B∪S)))
   
@@ -328,7 +324,7 @@ lemma-04-5 : {X : Set} → (P A R : Pred[ X ]) → (x : X) →
              P ≋ A ∪ R → P ⟪ x ⟫ ≋ (A ⟪ x ⟫ ∪ R · x) ∪ R
 lemma-04-5 P A R x P≋A∪R = 
    (≋trans
-     (distrib-subst∪≋⟪x⟫ x P≋A∪R)
+     (subst-∪≋⟪⟫ x P≋A∪R)
      (≋trans                               
        (right-disj-subst ((λ _ → commut-⊎) , λ _ → commut-⊎))
                          ((λ _ → right-assoc-⊎) , λ _ → left-assoc-⊎)))

@@ -23,6 +23,8 @@ open import Relation.Unary
   renaming (_⊆′_ to _⊆_)
 
 open import Function
+import Function.Related as Related
+
 
 -- Predicates and relations
 
@@ -91,13 +93,21 @@ right-disj-subst (B⊆B′ , B′⊆B) =
 𝟙≋ A = ∀ xs → A xs
 
 -- 𝟙≋ A is equivalent with 𝟙 ≋ A
-𝟙≋⇒𝟙≋A : {X : Set} → (A : Pred[ X ]) →
+𝟙≋⇒𝟙≋A : {X : Set} (A : Pred[ X ]) →
             𝟙≋ A → 𝟙 ≋ A
 𝟙≋⇒𝟙≋A A 𝟙≋-A = const ∘ 𝟙≋-A , (λ xs → const tt)
 
 𝟙≋A⇒𝟙≋ : {X : Set} → (A : Pred[ X ]) →
             𝟙 ≋ A → 𝟙≋ A
 𝟙≋A⇒𝟙≋ A (𝟙⊆A , A⊆𝟙) xs = 𝟙⊆A xs tt
+
+-----------------------------------------------------------------------------
+--
+
+𝟙≋-⊆⇒𝟙≋ : {X : Set} {A B : Pred[ X ]} →
+             𝟙≋ A → A ⊆ B → 𝟙≋ B
+𝟙≋-⊆⇒𝟙≋ 𝟙≋-A A⊆B =
+  A⊆B ˢ 𝟙≋-A
 
 -----------------------------------------------------------------------------
 -- Some list predicate operations to be used in the definition of almost full
@@ -144,21 +154,21 @@ subst-⟪⟫≋ x (a , b) =
 -----------------------------------------------------------------------------
 -- Some properties about _⟪_⟫ and _·_
 -----------------------------------------------------------------------------
-distrib-∪-⟪x⟫₁ : {X : Set} {A B : Pred[ X ]} (x : X) →
+distrib-∪⟪⟫⊆ : {X : Set} (A B : Pred[ X ]) (x : X) →
                 (A ∪ B) ⟪ x ⟫ ⊆ A ⟪ x ⟫ ∪ B ⟪ x ⟫
-distrib-∪-⟪x⟫₁ x xs =
+distrib-∪⟪⟫⊆ A B x xs =
   [ Sum.map inj₁ inj₁ , Sum.map inj₂ inj₂ ]′
 
 -----------------------------------------------------------------------------
-distrib-∪-⟪x⟫₂ : {X : Set} {A B : Pred[ X ]} (x : X) →
+distrib-∪⟪⟫⊇ : {X : Set} (A B : Pred[ X ]) (x : X) →
     A ⟪ x ⟫ ∪ B ⟪ x ⟫ ⊆ (A ∪ B) ⟪ x ⟫
-distrib-∪-⟪x⟫₂ x xs =
+distrib-∪⟪⟫⊇ A B x xs =
   [ Sum.map inj₁ inj₁ , Sum.map inj₂ inj₂ ]′
 
 -----------------------------------------------------------------------------
 distrib-∪-⟪x⟫ : {X : Set} {A B : Pred[ X ]} (x : X) →
   (A ∪ B) ⟪ x ⟫ ≋ A ⟪ x ⟫ ∪ B ⟪ x ⟫
-distrib-∪-⟪x⟫ x = distrib-∪-⟪x⟫₁ x , distrib-∪-⟪x⟫₂ x
+distrib-∪-⟪x⟫ {X} {A} {B} x = distrib-∪⟪⟫⊆ A B x , distrib-∪⟪⟫⊇ A B x
 
 -----------------------------------------------------------------------------
 -- this one is not used, but mentioned in Coquand's note:
@@ -167,15 +177,38 @@ distrib-∩-cons : {X : Set} {A B : Pred[ X ]} (x : X) →
 distrib-∩-cons x = ≋refl
 
 -----------------------------------------------------------------------------
-monotone-⟪x⟫ : {X : Set} {A B : Pred[ X ]} (x : X) → 
+mono-⟪⟫ : {X : Set} {A B : Pred[ X ]} (x : X) → 
                A ⊆ B → A ⟪ x ⟫ ⊆ B ⟪ x ⟫
-monotone-⟪x⟫ x h xs = Sum.map (h xs) (h (x ∷ xs))
+mono-⟪⟫ x h xs = Sum.map (h xs) (h (x ∷ xs))
 
 -----------------------------------------------------------------------------
-distrib-subst∪≋⟪x⟫ : {X : Set} {P B S : Pred[ X ]} (x : X) →
+subst-∪⟪⟫⊆ : {X : Set} {P B S : Pred[ X ]} (x : X) →
+  P ⊆ B ∪ S → P ⟪ x ⟫ ⊆ B ⟪ x ⟫ ∪ S ⟪ x ⟫
+subst-∪⟪⟫⊆ {X} {P} {B} {S} x P⊆B∪S xs =
+  (P ⟪ x ⟫) xs
+    ∼⟨ mono-⟪⟫ x P⊆B∪S xs ⟩
+  ((B ∪ S) ⟪ x ⟫) xs
+    ∼⟨ distrib-∪⟪⟫⊆ B S x xs ⟩
+  (B ⟪ x ⟫ ∪ S ⟪ x ⟫) xs
+  ∎
+  where open Related.EquationalReasoning
+
+-----------------------------------------------------------------------------
+subst-∪⟪⟫⊇ : {X : Set} {P B S : Pred[ X ]} (x : X) →
+  B ∪ S ⊆ P → B ⟪ x ⟫ ∪ S ⟪ x ⟫ ⊆ P ⟪ x ⟫
+subst-∪⟪⟫⊇ {X} {P} {B} {S} x B∪S⊆P xs =
+  (B ⟪ x ⟫ ∪ S ⟪ x ⟫) xs
+    ∼⟨ distrib-∪⟪⟫⊇ B S x xs ⟩
+  ((B ∪ S) ⟪ x ⟫) xs
+    ∼⟨ mono-⟪⟫ x B∪S⊆P xs ⟩
+  (P ⟪ x ⟫) xs
+  ∎
+  where open Related.EquationalReasoning
+
+-----------------------------------------------------------------------------
+subst-∪≋⟪⟫ : {X : Set} {P B S : Pred[ X ]} (x : X) →
                 P ≋ B ∪ S → P ⟪ x ⟫ ≋ B ⟪ x ⟫ ∪ S ⟪ x ⟫
-distrib-subst∪≋⟪x⟫ {X} {P} {B} {S} x (a , b) =
-  (λ xs → (distrib-∪-⟪x⟫₁ {X} {B} {S} x xs) ∘ (monotone-⟪x⟫ x a xs)) ,
-  (λ xs → (monotone-⟪x⟫ x b xs) ∘ distrib-∪-⟪x⟫₂ {X} {B} {S} x xs)
+subst-∪≋⟪⟫ {X} {P} {B} {S} x (P⊆B∪S , B∪S⊆P) =
+  subst-∪⟪⟫⊆ x P⊆B∪S , subst-∪⟪⟫⊇ x B∪S⊆P
 
 -----------------------------------------------------------------------------
