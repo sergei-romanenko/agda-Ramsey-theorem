@@ -31,8 +31,8 @@ import Function.Related as Related
 Pred[_] : ∀ {ℓ} (X : Set ℓ) → Set (lsuc ℓ)
 Pred[ A ] = Pred (List A) _
 
-⊆-id : {X : Set} {A : Pred[ X ]} → A ⊆ A
-⊆-id xs h = h
+⊆-refl : {X : Set} {A : Pred[ X ]} → A ⊆ A
+⊆-refl xs h = h
 
 -----------------------------------------------------------------------------
 -- List predicate equality

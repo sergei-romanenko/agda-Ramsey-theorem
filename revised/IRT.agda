@@ -11,14 +11,13 @@ open import Data.List
 open import Data.Sum as Sum public
   using (_⊎_; inj₁; inj₂; [_,_]′)
 open import Data.Product as Prod
-  using (_×_; _,_; proj₁; proj₂; Σ; ∃; curry; uncurry; <_,_>; _-,-_)
+  using (_×_; _,_; proj₁; proj₂; Σ; ∃; swap; curry; uncurry; <_,_>; _-,-_)
 open import Data.Unit
   using (⊤; tt)
 open import Data.Empty
-  using (⊥)
 
 open import Relation.Unary
-  using(Pred; _∈_; _∪_; _∩_)
+  using(Pred; _∈_; _∪_; _∩_; _⟨×⟩_; _⟨→⟩_;  _⟨·⟩_)
   renaming (_⊆′_ to _⊆_)
 open import Relation.Binary.PropositionalEquality
 
@@ -31,34 +30,21 @@ open import ListPredicate
 -- Some logical facts
 -----------------------------------------------------------------------------
 
--- commutativity of ⊎ and ×
-commut-⊎ : {A B : Set} → A ⊎ B → B ⊎ A
-commut-⊎ = [ inj₂ , inj₁ ]′
-
-commut-× : {A B : Set} → A × B → B × A
-commut-× = < proj₂ , proj₁ >
-
--- some associativity laws of ⊎
-left-assoc-⊎ : {A B C : Set} → (A ⊎ B) ⊎ C → A ⊎ (B ⊎ C)
-left-assoc-⊎ = [ Sum.map id inj₁ , inj₂ ∘ inj₂ ]′
-
-right-assoc-⊎ : {A B C : Set} → A ⊎ (B ⊎ C) → (A ⊎ B) ⊎ C
-right-assoc-⊎ = [ inj₁ ∘ inj₁ , Sum.map inj₂ id ]′
-
 -- a few laws to be used later
 
 A⊎C→B⊎D→A⊎B⊎C×D : {A B C D : Set} → A ⊎ C → B ⊎ D → A ⊎ B ⊎ (C × D)
 A⊎C→B⊎D→A⊎B⊎C×D =
   [ flip (const inj₁) ,
-    flip [ flip (const (inj₂ ∘ inj₁)) , curry (inj₂ ∘ inj₂ ∘ commut-×) ]′ ]′
+    flip [ flip (const (inj₂ ∘ inj₁)) ,
+           curry (inj₂ ∘ inj₂ ∘ < proj₂ , proj₁ >) ]′ ]′
 
-B⊎A⊎D×C→A⊎B⊎C×D : {A B C D : Set} → B ⊎ A ⊎ D × C → A ⊎ B ⊎ C × D
-B⊎A⊎D×C→A⊎B⊎C×D = [ inj₂ ∘ inj₁ , Sum.map id (inj₂ ∘ commut-×) ]′
+B⊎A⊎D×C→A⊎B⊎C×D : {A B C D : Set} → B ⊎ A ⊎ D × C → A ⊎ B ⊎ (C × D)
+B⊎A⊎D×C→A⊎B⊎C×D =
+  [ inj₂ ∘ inj₁ , Sum.map id (inj₂ ∘ < proj₂ , proj₁ >) ]′
 
-⊥⊎⊥⊎A→A : {A : Set} → ⊥ ⊎ ⊥ ⊎ A → A
-⊥⊎⊥⊎A→A (inj₁ ())
-⊥⊎⊥⊎A→A (inj₂ (inj₁ ()))
-⊥⊎⊥⊎A→A (inj₂ (inj₂ b)) = b
+A×[B⊎C]→A×B⊎A×C : {A B C : Set} → A × (B ⊎ C) → A × B ⊎ A × C
+A×[B⊎C]→A×B⊎A×C =
+  uncurry (λ a → Sum.map (_,_ a) (_,_ a))
 
 -----------------------------------------------------------------------------
 -- n-ary relations
@@ -157,14 +143,7 @@ mono-AF A⊆B (af-later f) =
 -----------------------------------------------------------------------------
 -- preparation for lemma-02
 -----------------------------------------------------------------------------
-lemma-02-1 : {X : Set} {A B R S : Pred[ X ]} → 
-             𝟙≋ (A ∪ R) → 𝟙≋ (B ∪ S) → 𝟙≋ (A ∪ B ∪ (R ∩ S))
-lemma-02-1 h1 h2 =
-  λ xs → A⊎C→B⊎D→A⊎B⊎C×D (h1 xs) (h2 xs)
 
--- N.B. most of the proofs below who are written with
--- pattern-matching, have been auto-generated (with some manual
--- renaming) by Agda's "auto" facility, by Fredrik Lindblad
 -----------------------------------------------------------------------------
 lemma-02-2-1 : {X : Set} (A B R S : Pred[ X ]) (x : X) →
                R ∩ S · x ⊆ A · x ∪ (R · x ∩ S · x) →
@@ -172,16 +151,19 @@ lemma-02-2-1 : {X : Set} (A B R S : Pred[ X ]) (x : X) →
 
 lemma-02-2-1 A B R S x h1 xs =
   [ inj₁ ∘ inj₁ ,
-    [ Sum.map (inj₂ ∘ inj₁) (inj₂ ∘ inj₁) , uncurry (λ r →
-              Sum.map (inj₂ ∘ inj₂ ∘ _,_ r) (Sum.map id inj₂ ∘ h1 xs ∘ _,_ r)) ]′ ]′
+    [ Sum.map (inj₂ ∘ inj₁) (inj₂ ∘ inj₁) ,
+      uncurry (λ r →
+        Sum.map (inj₂ ∘ inj₂ ∘ _,_ r) (Sum.map id inj₂ ∘ h1 xs ∘ _,_ r))
+    ]′ ]′
 
 -----------------------------------------------------------------------------
 lemma-02-2 : {X : Set} (A B R S : Pred[ X ]) (x : X) →
              𝟙≋ (A ∪ R) →
              A ∪ B ⟪ x ⟫ ∪ (R ∩ S ⟪ x ⟫) ⊆ (A ∪ B ∪ (R ∩ S))⟪ x ⟫
-lemma-02-2 A B R S x h1 xs h2 =
-  lemma-02-2-1 A B R S x 
-    (λ ys ab → Sum.map id (flip _,_ (proj₂ ab)) (h1 (x ∷ ys))) xs h2
+lemma-02-2 A B R S x A∪R =
+  lemma-02-2-1 A B R S x
+    (λ xs (rs : (R ∩ S · x) xs) →
+      Sum.map id (flip _,_ (proj₂ rs)) (A∪R (x ∷ xs)))
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -190,8 +172,7 @@ lemma-02' : {X : Set} → (P A B R S : Pred[ X ]) → P ⊆ B ∪ S →
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 lemma-02' P A B R S P⊆B∪S A∪R (af-now 𝟙≋P) =
-  af-now (λ xs → lemma-02-1 (λ ys → A∪R xs)
-                               (λ ys → 𝟙≋-⊆⇒𝟙≋ 𝟙≋P P⊆B∪S ys) xs)
+  af-now (λ xs → A⊎C→B⊎D→A⊎B⊎C×D (A∪R xs) (P⊆B∪S xs (𝟙≋P xs)))
 
 lemma-02' P A B R S P⊆B∪S A∪R (af-later afPx) = 
   af-later (λ x → 
@@ -279,7 +260,7 @@ lemma-03 : {X : Set} → (A B R S : Pred[ X ]) →
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 lemma-03 A B R S h1 h2 =
-  lemma-03' (A ∪ R) A B R S h1 h2 ⊆-id
+  lemma-03' (A ∪ R) A B R S h1 h2 ⊆-refl
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -379,8 +360,8 @@ theorem-04' A B R S P Q
              (h1 x)
              -- Ar (S · x)
              (h2 x)
-             ⊆-id
-             ⊆-id
+             ⊆-refl
+             ⊆-refl
              -- Goal: AF ((A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ R · x)
              -- we use AF (A ⟪ x ⟫ ∪ R · x ∪ R) and AF (B ∪ S)
              (mono-AF 
@@ -414,7 +395,7 @@ theorem-04 : {X : Set} → (A B R S : Pred[ X ]) →
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 theorem-04 A B R S x x' =
-  theorem-04' A B R S (A ∪ R) (B ∪ S) x x' ⊆-id ⊆-id
+  theorem-04' A B R S (A ∪ R) (B ∪ S) x x' ⊆-refl ⊆-refl
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -424,7 +405,7 @@ corollary-05 : {X : Set} → (R S : Pred[ X ]) →
 -----------------------------------------------------------------------------
 corollary-05 R S h1 h2 h3 h4 = 
   mono-AF
-    (λ xs → ⊥⊎⊥⊎A→A)
+    (λ xs → [ ⊥-elim , [ ⊥-elim , id ]′ ]′)
     (theorem-04 𝟘 𝟘 R S
       h1 h2 
       (mono-AF (λ xs h → inj₂ h) h3)
