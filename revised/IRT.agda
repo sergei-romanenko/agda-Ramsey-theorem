@@ -83,24 +83,12 @@ _⋀_ {A} {suc n} R S a = R a ⋀ S a
 
 -- ⋀ commutes with ∩
 
-commut-⋀-∩₁ : {X : Set} → (n : ℕ) → (R S : NRel n X) →
+mono-⋀∩ : {X : Set} → (n : ℕ) → (R S : NRel n X) →
               fromNRel n R ∩ fromNRel n S ⊆ fromNRel n (R ⋀ S)
-commut-⋀-∩₁ zero R S xs (a , b) = a , b
-commut-⋀-∩₁ (suc n) R S [] (a , b) = b
-commut-⋀-∩₁ (suc n) R S (x ∷ xs) (a , b) = 
-  commut-⋀-∩₁ n (R x) (S x) xs (a , b)
-
-commut-⋀-∩₂ : {X : Set} → (n : ℕ) → (R S : NRel n X) →
-              fromNRel n (R ⋀ S) ⊆ fromNRel n R ∩ fromNRel n S
-commut-⋀-∩₂ zero R S xs h = h
-commut-⋀-∩₂ (suc n) R S [] h = h , h
-commut-⋀-∩₂ (suc n) R S (x ∷ xs) h =
-  commut-⋀-∩₂ n (R x) (S x) xs h
-
-commut-⋀-∩ : {X : Set} → (n : ℕ) → (R S : NRel n X) →
-             fromNRel n R ∩ fromNRel n S ≋ fromNRel n (R ⋀ S)
-commut-⋀-∩ n R S = commut-⋀-∩₁ n R S , commut-⋀-∩₂ n R S
-
+mono-⋀∩ zero R S xs (a , b) = a , b
+mono-⋀∩ (suc n) R S [] (a , b) = b
+mono-⋀∩ (suc n) R S (x ∷ xs) (a , b) = 
+  mono-⋀∩ n (R x) (S x) xs (a , b)
 
 -----------------------------------------------------------------------------
 -- Ar a, for a : D, called "arity". Ar is a bar for the property of
@@ -108,9 +96,16 @@ commut-⋀-∩ n R S = commut-⋀-∩₁ n R S , commut-⋀-∩₂ n R S
 -- argument has some element of some given property, for instance
 -- being equal to one, is not Ar. There is no point where A becomes
 -- constant.
+--
+-- A note. In the original definition of `Ar`, `ar-now` looked as
+--   ar-now   : (n : ∀ x → (A · x) ≋ A) → Ar A
+-- But ⊆ is sufficient for the proofs...
+-- (A · x) ≋ A means that additional x does not change the situation, while
+-- (A · x) ⊆ A means that additional x does not improve the situation.
+
 -----------------------------------------------------------------------------
 data Ar {X : Set} (A : Pred[ X ]) : Set where
-  ar-now   : (n : ∀ x → (A · x) ≋ A) → Ar A
+  ar-now   : (n : ∀ x → (A · x) ⊆ A) → Ar A
   ar-later : (l : ∀ x → Ar (A · x)) → Ar A
 
 
@@ -119,7 +114,7 @@ data Ar {X : Set} (A : Pred[ X ]) : Set where
 
 fromNRel→Ar : {X : Set} → (n : ℕ) →
               (R : NRel n X) → Ar (fromNRel n R)
-fromNRel→Ar zero R = ar-now (const (flip const , flip const))
+fromNRel→Ar zero R = ar-now (const (flip const))
 fromNRel→Ar (suc n) R = ar-later (fromNRel→Ar n ∘ R)
 
 
@@ -127,7 +122,7 @@ fromNRel→Ar (suc n) R = ar-later (fromNRel→Ar n ∘ R)
 -- Almost full relations. Like a Well-Quasi ordering, without transitivity
 -----------------------------------------------------------------------------
 data AF {X : Set} (A : Pred[ X ]) : Set where
-  af-now :   (n : 𝟙≋ A) → AF A
+  af-now :   (n : 𝟙⊆ A) → AF A
   af-later : (l : (x : X) → AF (A ⟪ x ⟫)) → AF A
 
 
@@ -146,8 +141,8 @@ monotone {ℓ} {X} P = {A B : Pred X ℓ} →
 -----------------------------------------------------------------------------
 mono-AF : {X : Set} → monotone (AF {X})
 -----------------------------------------------------------------------------
-mono-AF A⊆B (af-now 𝟙≋A) =
-  af-now (mono-𝟙≋ A⊆B 𝟙≋A)
+mono-AF A⊆B (af-now 𝟙⊆A) =
+  af-now (mono-𝟙⊆ A⊆B 𝟙⊆A)
 mono-AF {X} {A} {B} A⊆B (af-later afA⟪⟫) =
   af-later (λ x → mono-AF
     (begin A ⟪ x ⟫ ⊆⟨ mono-⟪⟫ x A⊆B ⟩ B ⟪ x ⟫ ∎)
@@ -208,14 +203,14 @@ lemma-02₀ : {X : Set} {P A B R S : Pred[ X ]} → P ⊆ B ∪ S →
             𝟙⊆ (A ∪ R) → AF P → AF (A ∪ B ∪ (R ∩ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02₀ {X} {P} {A} {B} {R} {S} P⊆B∪S 𝟙⊆A∪R (af-now 𝟙≋P) =
+lemma-02₀ {X} {P} {A} {B} {R} {S} P⊆B∪S 𝟙⊆A∪R (af-now 𝟙⊆P) =
   af-now (flip helper tt)
   where
   open ⊆-Reasoning
   helper : 𝟙 ⊆ A ∪ B ∪ (R ∩ S)
   helper = begin
     𝟙
-      ⊆⟨ 𝟙≋⇒𝟙⊆A 𝟙≋P ⟩
+      ⊆⟨ 𝟙⊆⇒𝟙⊆A 𝟙⊆P ⟩
     P
       ⊆⟨ P⊆B∪S ⟩
     B ∪ S
@@ -235,29 +230,29 @@ lemma-02₀ {X} {P} {A} {B} {R} {S} P⊆B∪S A∪R (af-later afPx) =
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02 : {X : Set} (A B R S : Pred[ X ]) →
-           𝟙≋ (A ∪ R) → AF (B ∪ S) → AF (A ∪ B ∪ (R ∩ S))
+lemma-02 : {X : Set} {A B R S : Pred[ X ]} →
+           𝟙⊆ (A ∪ R) → AF (B ∪ S) → AF (A ∪ B ∪ (R ∩ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02 A B R S =
+lemma-02 =
   lemma-02₀ ⊆-refl
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02-sym : {X : Set} → (A B R S : Pred[ X ]) →
-               𝟙≋ (B ∪ S) → AF (A ∪ R) → AF (A ∪ B ∪ (R ∩ S))
+lemma-02-sym : {X : Set} {A B R S : Pred[ X ]} →
+               𝟙⊆ (B ∪ S) → AF (A ∪ R) → AF (A ∪ B ∪ (R ∩ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02-sym A B R S h1 h2 =
-  mono-AF (λ x → B⊎A⊎D×C→A⊎B⊎C×D) (lemma-02 B A S R h1 h2)
+lemma-02-sym B∪S afA∪R =
+  mono-AF (λ xs → B⊎A⊎D×C→A⊎B⊎C×D) (lemma-02 B∪S afA∪R)
 
 -----------------------------------------------------------------------------
 -- preparation for lemma-03
 -----------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
-lemma-03-1 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
+lemma-03-1 : {X : Set} {A B R S : Pred[ X ]} (x : X) →
              R ⟪ x ⟫ ⊆ R → A ⟪ x ⟫ ∪ B ∪ R ⟪ x ⟫ ∩ S ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
-lemma-03-1 A B R S x r xs =
+lemma-03-1 x r xs =
   [ Sum.map inj₁ inj₁ , inj₁ ∘ inj₂ ∘ Sum.map id (Prod.map (r xs) id) ]′
 
 -----------------------------------------------------------------------------
@@ -279,25 +274,21 @@ lemma-03-4 A B C D A⊆B C⊆D =
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03' : {X : Set} → (P A B R S : Pred[ X ]) →
+lemma-03' : {X : Set} {P A B R S : Pred[ X ]} →
             (∀ x → R · x ⊆ R) → AF P → P ⊆ A ∪ R → AF (B ∪ S) → 
             AF (A ∪ B ∪ R ∩ S)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03' P A B R S Rx⊆R (af-now n) P⊆A∪R AF-B∪S = 
-  lemma-02 A B R S
-    (λ xs → mono-𝟙≋ P⊆A∪R n xs)
-    AF-B∪S
+lemma-03' {X} {P} {A} {B} {R} {S} Rx⊆R (af-now n) P⊆A∪R AF-B∪S = 
+  lemma-02 (mono-𝟙⊆ P⊆A∪R n) AF-B∪S
 
-lemma-03' P A B R S Rx⊆R (af-later h) P⊆A∪R AF-B∪S = 
+lemma-03' {X} {P} {A} {B} {R} {S} Rx⊆R (af-later h) P⊆A∪R AF-B∪S = 
   af-later (λ x →
-    mono-AF (lemma-03-1 A B R S x (lemma-03-2 R x (Rx⊆R x)))
+    mono-AF (lemma-03-1 x (lemma-03-2 R x (Rx⊆R x)))
             (mono-AF -- use R ⟪ x ⟫ ⊆ R, while R ⊆ R ⟪ x ⟫ is trivial
                      (lemma-03-3 (A ⟪ x ⟫) B (R ⟪ x ⟫) R S 
                        (mono-⟪x⟫ R x))
-                     (lemma-03' (P ⟪ x ⟫) (A ⟪ x ⟫) B R S
-                                Rx⊆R 
-                                (h x)
+                     (lemma-03' Rx⊆R  (h x)
                                  -- A⊆B∪C → C⊆D → A⊆B∪D
                                 (lemma-03-4 (P ⟪ x ⟫) (A ⟪ x ⟫) (R ⟪ x ⟫) R
                                   (subst-∪⟪⟫⊆ x P⊆A∪R)
@@ -312,7 +303,7 @@ lemma-03 : {X : Set} → (A B R S : Pred[ X ]) →
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 lemma-03 A B R S h1 h2 =
-  lemma-03' (A ∪ R) A B R S h1 h2 ⊆-refl
+  lemma-03' h1 h2 ⊆-refl
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -376,24 +367,21 @@ theorem-04' : {X : Set} → (A B R S P Q : Pred[ X ]) →
 -----------------------------------------------------------------------------
 theorem-04'
   A B R S P Q (ar-now h) ArS P⊆A∪R Q⊆B∪S AfP AfQ = 
-    lemma-03 A B R S (proj₁ ∘ h) 
+    lemma-03 A B R S h 
       (mono-AF P⊆A∪R AfP)
       (mono-AF Q⊆B∪S AfQ)
 theorem-04'
   A B R S P Q (ar-later h) (ar-now h')
   P⊆A∪R Q⊆B∪S AfP AfQ = 
-    lemma-03-sym A B R S (proj₁ ∘ h')
+    lemma-03-sym A B R S h'
       (mono-AF P⊆A∪R AfP)
       (mono-AF Q⊆B∪S AfQ)
-theorem-04' A B R S P Q
-  (ar-later h1) (ar-later h2)
-  P⊆A∪R Q⊆B∪S (af-now h3) AfQ = 
-    lemma-02 A B R S 
-      (λ xs → P⊆A∪R xs (h3 xs)) (mono-AF Q⊆B∪S AfQ)
+theorem-04' A B R S P Q (ar-later h1) (ar-later h2) P⊆A∪R Q⊆B∪S (af-now h3) AfQ = 
+    lemma-02 (λ xs → P⊆A∪R xs (h3 xs)) (mono-AF Q⊆B∪S AfQ)
 theorem-04' A B R S P Q
   (ar-later h1) (ar-later h2) P⊆A∪R Q⊆B∪S
   (af-later h3) (af-now h4) =
-    lemma-02-sym A B R S
+    lemma-02-sym
       (λ xs → Q⊆B∪S xs (h4 xs))
       (mono-AF P⊆A∪R (af-later h3))
 theorem-04' A B R S P Q
@@ -422,7 +410,7 @@ theorem-04' A B R S P Q
                (theorem-04' (A ⟪ x ⟫ ∪ R · x) B R S
                  (P ⟪ x ⟫) Q
                  (ar-later h1) (ar-later h2)
-                 -- P ⟪ x ⟫ ≋ (A ⟪ x ⟫ ∪ R · x) ∪ R
+                 -- P ⟪ x ⟫ ⊆ (A ⟪ x ⟫ ∪ R · x) ∪ R
                  (lemma-04-5 P A R x P⊆A∪R)
                  Q⊆B∪S
                  (h3 x)
@@ -472,7 +460,7 @@ IRT_n : {X : Set} → (n : ℕ) → (R S : NRel n X) →
         AF (fromNRel n R) → AF (fromNRel n S) → AF (fromNRel n (R ⋀ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-IRT_n n R S h1 h2 = mono-AF (commut-⋀-∩₁ n R S)
+IRT_n n R S h1 h2 = mono-AF (mono-⋀∩ n R S)
                             (corollary-05 (fromNRel n R) (fromNRel n S)
                               (fromNRel→Ar n R) (fromNRel→Ar n S)
                               h1
