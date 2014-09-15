@@ -92,20 +92,37 @@ module ⊆-Reasoning {ℓ} {X : Set ℓ} where
     renaming (_∼⟨_⟩_ to _⊆⟨_⟩_; _≈⟨_⟩_ to _≋⟨_⟩_; _≈⟨⟩_ to _≋⟨⟩_)
 
 -----------------------------------------------------------------------------
--- Some special cases of substitutivity
+-- Monotonicity of ∪
 
-⊆-cong : ∀ {ℓ} {X : Set ℓ} {A₁ A₂ B₁ B₂ : Pred X ℓ} →
+mono-∪ : ∀ {ℓ} {X : Set ℓ} {A₁ A₂ B₁ B₂ : Pred X ℓ} →
                   A₁ ⊆ A₂ → B₁ ⊆ B₂ → A₁ ∪ B₁ ⊆ A₂ ∪ B₂
-⊆-cong A₁⊆A₂ B₁⊆B₂ x =
+mono-∪ A₁⊆A₂ B₁⊆B₂ x =
   Sum.map (A₁⊆A₂ x) (B₁⊆B₂ x)
 
-⊆-congˡ : ∀ {ℓ} {X : Set ℓ} {A₁ A₂ B : Pred X ℓ} →
+mono-∪ˡ : ∀ {ℓ} {X : Set ℓ} {A₁ A₂ B : Pred X ℓ} →
                   A₁ ⊆ A₂ → A₁ ∪ B ⊆ A₂ ∪ B
-⊆-congˡ A₁⊆A₂ = ⊆-cong A₁⊆A₂ ⊆-refl
+mono-∪ˡ A₁⊆A₂ = mono-∪ A₁⊆A₂ ⊆-refl
 
-⊆-congʳ : ∀ {ℓ} {X : Set ℓ} {A B₁ B₂ : Pred X ℓ} →
+mono-∪ʳ : ∀ {ℓ} {X : Set ℓ} {A B₁ B₂ : Pred X ℓ} →
                   B₁ ⊆ B₂ → A ∪ B₁ ⊆ A ∪ B₂
-⊆-congʳ B₁⊆B₂ = ⊆-cong ⊆-refl B₁⊆B₂
+mono-∪ʳ B₁⊆B₂ = mono-∪ ⊆-refl B₁⊆B₂
+
+-----------------------------------------------------------------------------
+-- Monotonicity of ∩
+
+mono-∩ : ∀ {ℓ} {X : Set ℓ} {A₁ A₂ B₁ B₂ : Pred X ℓ} →
+                  A₁ ⊆ A₂ → B₁ ⊆ B₂ → A₁ ∩ B₁ ⊆ A₂ ∩ B₂
+mono-∩ A₁⊆A₂ B₁⊆B₂ x =
+  Prod.map (A₁⊆A₂ x) (B₁⊆B₂ x)
+
+mono-∩ˡ : ∀ {ℓ} {X : Set ℓ} {A₁ A₂ B : Pred X ℓ} →
+                  A₁ ⊆ A₂ → A₁ ∩ B ⊆ A₂ ∩ B
+mono-∩ˡ A₁⊆A₂ = mono-∩ A₁⊆A₂ ⊆-refl
+
+mono-∩ʳ : ∀ {ℓ} {X : Set ℓ} {A B₁ B₂ : Pred X ℓ} →
+                  B₁ ⊆ B₂ → A ∩ B₁ ⊆ A ∩ B₂
+mono-∩ʳ B₁⊆B₂ = mono-∩ ⊆-refl B₁⊆B₂
+
 
 -----------------------------------------------------------------------------
 
@@ -122,7 +139,7 @@ module ⊆-Reasoning {ℓ} {X : Set ℓ} where
 -- Replacement for 𝟙 ≋ A (see Coquand's note), 𝟙⊆ A is easier for
 -- Agda to scrutinize.
 
-𝟙⊆ : {X : Set} → Pred[ X ] → Set
+𝟙⊆ : {X : Set} (A : Pred[ X ]) → Set
 𝟙⊆ A = ∀ xs → A xs
 
 -- 𝟙⊆ A is equivalent to 𝟙 ⊆ A
@@ -137,7 +154,13 @@ module ⊆-Reasoning {ℓ} {X : Set ℓ} where
 -- 𝟙⊆ A is equivalent to 𝟙 ≋ A
 𝟙⊆⇒𝟙≋A : {X : Set} (A : Pred[ X ]) →
   𝟙⊆ A → 𝟙 ≋ A
-𝟙⊆⇒𝟙≋A A 𝟙⊆-A = const ∘ 𝟙⊆-A , const ∘ (const tt)
+𝟙⊆⇒𝟙≋A A 𝟙⊆-A =
+  const ∘ 𝟙⊆-A , const ∘ (const tt)
+
+𝟙≋A⇒𝟙⊆ : {X : Set} (A : Pred[ X ]) →
+  𝟙 ≋ A → 𝟙⊆ A
+𝟙≋A⇒𝟙⊆ A (𝟙⊆A , A⊆𝟙) =
+  𝟙⊆A⇒𝟙⊆ A 𝟙⊆A
 
 -----------------------------------------------------------------------------
 
@@ -167,9 +190,9 @@ distrib-∪⟪⟫⊆ A B x xs =
   [ Sum.map inj₁ inj₁ , Sum.map inj₂ inj₂ ]′
 
 -----------------------------------------------------------------------------
-distrib-∪⟪⟫⊇ : {X : Set} (A B : Pred[ X ]) (x : X) →
+distrib-∪⟪⟫⊇ : {X : Set} {A B : Pred[ X ]} {x : X} →
     A ⟪ x ⟫ ∪ B ⟪ x ⟫ ⊆ (A ∪ B) ⟪ x ⟫
-distrib-∪⟪⟫⊇ A B x xs =
+distrib-∪⟪⟫⊇ xs =
   [ Sum.map inj₁ inj₁ , Sum.map inj₂ inj₂ ]′
 
 -----------------------------------------------------------------------------
@@ -200,29 +223,34 @@ subst-∪⟪⟫⊆ {X} {P} {B} {S} x P⊆B∪S = begin
 
 -- a few laws to be used later
 
-A⊎C→B⊎D→A⊎B⊎C×D : {A B C D : Set} → A ⊎ C → B ⊎ D → A ⊎ B ⊎ (C × D)
-A⊎C→B⊎D→A⊎B⊎C×D =
-  [ flip (const inj₁) ,
-    flip [ flip (const (inj₂ ∘ inj₁)) ,
-           curry (inj₂ ∘ inj₂ ∘ < proj₂ , proj₁ >) ]′ ]′
+A∪A⊆A : {X : Set} {A : Pred[ X ]} →
+  A ∪ A ⊆ A
+A∪A⊆A xs =
+  [ id , id ]′
 
-⊎×⊎→⊎⊎× : {A B C D : Set} → (A ⊎ C) × (B ⊎ D) → A ⊎ B ⊎ (C × D)
-⊎×⊎→⊎⊎× = uncurry A⊎C→B⊎D→A⊎B⊎C×D
+A⊆A∪B : {X : Set} {A B : Pred[ X ]} →
+  A ⊆ A ∪ B
+A⊆A∪B xs = inj₁
 
-[A∪C]∩[B∪D]⊆A∪B∪[C∩D] : {X : Set} (A B C D : Pred[ X ]) →
+[A∪C]∩[B∪D]⊆A∪B∪[C∩D] : {X : Set} {A B C D : Pred[ X ]} →
   (A ∪ C) ∩ (B ∪ D) ⊆ A ∪ B ∪ (C ∩ D)
-[A∪C]∩[B∪D]⊆A∪B∪[C∩D] A B C D xs (A∪C , B∪D) = A⊎C→B⊎D→A⊎B⊎C×D A∪C B∪D
+[A∪C]∩[B∪D]⊆A∪B∪[C∩D] xs =
+  uncurry [ flip (const inj₁) ,
+            flip [ flip (const (inj₂ ∘ inj₁)) , flip (curry (inj₂ ∘ inj₂)) ]′ ]′
 
-B⊎A⊎D×C→A⊎B⊎C×D : {A B C D : Set} → B ⊎ A ⊎ D × C → A ⊎ B ⊎ (C × D)
-B⊎A⊎D×C→A⊎B⊎C×D =
+B∪A∪D∩C⊆A∪B∪C∩D : {X : Set} {A B C D : Pred[ X ]} →
+  B ∪ A ∪ D ∩ C ⊆ A ∪ B ∪ (C ∩ D)
+B∪A∪D∩C⊆A∪B∪C∩D xs =
   [ inj₂ ∘ inj₁ , Sum.map id (inj₂ ∘ < proj₂ , proj₁ >) ]′
 
-A×[B⊎C]→A×B⊎A×C : {A B C : Set} → A × (B ⊎ C) → A × B ⊎ A × C
-A×[B⊎C]→A×B⊎A×C =
+A∩[B∪C]⊆A∩B∪A∩C : {X : Set} {A B C : Pred[ X ]} →
+  A ∩ (B ∪ C) ⊆ A ∩ B ∪ A ∩ C
+A∩[B∪C]⊆A∩B∪A∩C xs =
   uncurry (λ a → Sum.map (_,_ a) (_,_ a))
 
-[A⊎B]×C→A×C⊎B×C : {A B C : Set} → (A ⊎ B) × C → (A × C) ⊎ (B × C)
-[A⊎B]×C→A×C⊎B×C =
+[A∪B]∩C⊆A∩C∪B∩C : {X : Set} {A B C : Pred[ X ]} →
+  (A ∪ B) ∩ C ⊆ (A ∩ C) ∪ (B ∩ C)
+[A∪B]∩C⊆A∩C∪B∩C xs =
   uncurry (λ c → Sum.map (flip _,_ c) (flip _,_ c)) ∘ swap
 
 -----------------------------------------------------------------------------
@@ -326,14 +354,13 @@ lemma-02₁ : {X : Set} (A B R S : Pred[ X ]) (x : X) →
              𝟙⊆ (A · x ∪ R · x) →
              R ∩ S · x ⊆ A · x ∪ (R · x ∩ S · x)
 
-lemma-02₁ A B R S x Ax∪Rx =
-  begin
+lemma-02₁ A B R S x Ax∪Rx = begin
   R ∩ S · x
     ⊆⟨ (λ xs → proj₂) ⟩
   S · x
     ⊆⟨ _,_ ∘ Ax∪Rx ⟩
   (A · x ∪ R · x) ∩ S · x
-    ⊆⟨ (λ xs → [A⊎B]×C→A×C⊎B×C) ⟩
+    ⊆⟨ [A∪B]∩C⊆A∩C∪B∩C ⟩
   (A · x ∩ S · x) ∪ (R · x ∩ S · x)
     ⊆⟨ (λ xs → [ inj₁ ∘ proj₁ , inj₂ ]′) ⟩
   A · x ∪ (R · x ∩ S · x)
@@ -347,9 +374,9 @@ lemma-02₂ : {X : Set} (A B R S : Pred[ X ]) (x : X) →
 
 lemma-02₂ A B R S x A∪R = begin
    A ∪ B ⟪ x ⟫ ∪ (R ∩ S ⟪ x ⟫)
-    ⊆⟨ ⊆-congʳ $ ⊆-congʳ $ (λ xs → A×[B⊎C]→A×B⊎A×C) ⟩
+    ⊆⟨ mono-∪ʳ $ mono-∪ʳ $ A∩[B∪C]⊆A∩B∪A∩C ⟩
   A ∪ B ⟪ x ⟫ ∪ (R ∩ S) ∪ (R ∩ S · x)
-    ⊆⟨ ⊆-congʳ $ ⊆-congʳ $ ⊆-congʳ $ lemma-02₁ A S R S x (A∪R ∘ _∷_ x) ⟩
+    ⊆⟨ mono-∪ʳ $ mono-∪ʳ $ mono-∪ʳ $ lemma-02₁ A S R S x (A∪R ∘ _∷_ x) ⟩
   A ∪ B ⟪ x ⟫ ∪ (R ∩ S) ∪ (A · x ∪ (R · x ∩ S · x))
     ⊆⟨ (λ xs →
       [ inj₁ ∘ inj₁ ,
@@ -358,9 +385,9 @@ lemma-02₂ A B R S x A∪R = begin
   (A ∪ A · x) ∪ B ⟪ x ⟫ ∪ (R ∩ S) ∪ (R · x ∩ S · x)
     ⊆⟨ ⊆-refl ⟩
   A ⟪ x ⟫ ∪ (B ⟪ x ⟫ ∪ (R ∩ S) ⟪ x ⟫)
-    ⊆⟨ ⊆-congʳ $ distrib-∪⟪⟫⊇ B (R ∩ S) x ⟩
+    ⊆⟨ mono-∪ʳ $ distrib-∪⟪⟫⊇ ⟩
   A ⟪ x ⟫ ∪ (B ∪ (R ∩ S)) ⟪ x ⟫
-    ⊆⟨ distrib-∪⟪⟫⊇ A (B ∪ (R ∩ S)) x  ⟩
+    ⊆⟨ distrib-∪⟪⟫⊇  ⟩
   (A ∪ B ∪ (R ∩ S)) ⟪ x ⟫
   ∎
   where open ⊆-Reasoning
@@ -384,7 +411,7 @@ lemma-02₀ {X} {P} {A} {B} {R} {S} P⊆B∪S 𝟙⊆A∪R (af-now 𝟙⊆P) =
     B ∪ S
       ⊆⟨ _,_ ∘ 𝟙⊆A∪R ⟩
     (A ∪ R) ∩ (B ∪ S)
-      ⊆⟨ (λ xs → ⊎×⊎→⊎⊎×) ⟩
+      ⊆⟨ [A∪C]∩[B∪D]⊆A∪B∪[C∩D] ⟩
     A ∪ B ∪ (R ∩ S)
     ∎
 
@@ -410,35 +437,71 @@ lemma-02-sym : {X : Set} {A B R S : Pred[ X ]} →
                𝟙⊆ (B ∪ S) → AF (A ∪ R) → AF (A ∪ B ∪ (R ∩ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-02-sym B∪S afA∪R =
-  mono-AF (λ xs → B⊎A⊎D×C→A⊎B⊎C×D) (lemma-02 B∪S afA∪R)
+lemma-02-sym {X} {A} {B} {R} {S} B∪S afA∪R =
+  mono-AF
+    (begin
+      B ∪ A ∪ (S ∩ R)
+        ⊆⟨ B∪A∪D∩C⊆A∪B∪C∩D ⟩
+      A ∪ B ∪ (R ∩ S) ∎)
+    (lemma-02 B∪S afA∪R)
+  where open ⊆-Reasoning
 
 -----------------------------------------------------------------------------
 -- preparation for lemma-03
 -----------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
+lemma-03-3 : {X : Set} (A B R₂ R₁ S : Pred[ X ]) →
+             R₁ ⊆ R₂ → A ∪ B ∪ R₁ ∩ S ⊆ A ∪ B ∪ R₂ ∩ S
+
+lemma-03-3 A B R₂ R₁ S R₁⊆R₂ = begin
+  A ∪ B ∪ R₁ ∩ S  ⊆⟨ mono-∪ʳ $ mono-∪ʳ (mono-∩ˡ R₁⊆R₂) ⟩ A ∪ B ∪ R₂ ∩ S ∎
+  where open ⊆-Reasoning
+
+-----------------------------------------------------------------------------
 lemma-03-1 : {X : Set} {A B R S : Pred[ X ]} (x : X) →
-             R ⟪ x ⟫ ⊆ R → A ⟪ x ⟫ ∪ B ∪ R ⟪ x ⟫ ∩ S ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
-lemma-03-1 x r xs =
-  [ Sum.map inj₁ inj₁ , inj₁ ∘ inj₂ ∘ Sum.map id (Prod.map (r xs) id) ]′
+             R · x ⊆ R → A ⟪ x ⟫ ∪ B ∪ R ⟪ x ⟫ ∩ S ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
+lemma-03-1 {X} {A} {B} {R} {S} x Rx⊆R = begin
+  A ⟪ x ⟫ ∪ B ∪ R ⟪ x ⟫ ∩ S
+    --⊆⟨ mono-∪ʳ $ mono-∪ (mono-⟪x⟫ B x) helper ⟩
+    ⊆⟨ mono-∪ʳ $ mono-∪ (mono-⟪x⟫ B x) helper ⟩
+  A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ (R ∩ S) ⟪ x ⟫
+    ⊆⟨ mono-∪ʳ $ distrib-∪⟪⟫⊇ ⟩
+  A ⟪ x ⟫ ∪ (B ∪ (R ∩ S)) ⟪ x ⟫
+    ⊆⟨ distrib-∪⟪⟫⊇ ⟩
+  (A ∪ B ∪ R ∩ S) ⟪ x ⟫
+  ∎
+  where
+  open ⊆-Reasoning
+  helper = begin
+    R ⟪ x ⟫ ∩ S
+      ≋⟨⟩
+    (R ∪ R · x) ∩ S
+      ⊆⟨ [A∪B]∩C⊆A∩C∪B∩C ⟩
+    (R ∩ S) ∪ (R · x ∩ S)
+      ⊆⟨ mono-∪ʳ $ mono-∩ˡ Rx⊆R ⟩
+    (R ∩ S) ∪ (R ∩ S)
+      ⊆⟨ A∪A⊆A ⟩
+    R ∩ S
+      ⊆⟨ A⊆A∪B ⟩
+    (R ∩ S) ∪ (R · x ∩ S · x)
+      ≋⟨⟩
+    (R ∩ S) ⟪ x ⟫
+    ∎
 
 -----------------------------------------------------------------------------
-lemma-03-2 : {X : Set} → (R : Pred[ X ]) → (x : X) →
+lemma-03-2 : {X : Set} {R : Pred[ X ]} (x : X) →
              R · x ⊆ R → R ⟪ x ⟫ ⊆ R
-lemma-03-2 R x r xs = [ id , r xs ]′
+lemma-03-2 {X} {R} x Rx⊆R = begin
+  R ⟪ x ⟫ ≋⟨⟩ R ∪ R · x ⊆⟨ mono-∪ʳ $ Rx⊆R ⟩ R ∪ R ⊆⟨ A∪A⊆A ⟩ R ∎
+  where open ⊆-Reasoning
 
 -----------------------------------------------------------------------------
-lemma-03-3 : {X : Set} → (A B R' R S : Pred[ X ]) →
-             R ⊆ R' → A ∪ B ∪ R ∩ S ⊆ A ∪ B ∪ R' ∩ S
-lemma-03-3 A B R' R S r xs =
-  Sum.map id (Sum.map id (Prod.map (r xs) id))
-
------------------------------------------------------------------------------
-lemma-03-4 : {X : Set} → (A B C D : Pred[ X ]) →
-             A ⊆ B ∪ C → C ⊆ D → A ⊆ B ∪ D
-lemma-03-4 A B C D A⊆B C⊆D =
-  λ xs → Sum.map id (C⊆D xs) ∘ A⊆B xs
+lemma-03-4 : {X : Set} {A B C D : Pred[ X ]} →
+             C ⊆ D → A ⊆ B ∪ C → A ⊆ B ∪ D
+lemma-03-4 {X} {A} {B} {C} {D} C⊆D A⊆B∪C = begin
+  A ⊆⟨ A⊆B∪C ⟩ B ∪ C ⊆⟨ mono-∪ʳ $ C⊆D ⟩ B ∪ D ∎
+  where open ⊆-Reasoning
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -452,16 +515,15 @@ lemma-03' {X} {P} {A} {B} {R} {S} Rx⊆R (af-now n) P⊆A∪R AF-B∪S =
 
 lemma-03' {X} {P} {A} {B} {R} {S} Rx⊆R (af-later h) P⊆A∪R AF-B∪S = 
   af-later (λ x →
-    mono-AF (lemma-03-1 x (lemma-03-2 R x (Rx⊆R x)))
+    mono-AF (lemma-03-1 x (Rx⊆R x))
             (mono-AF -- use R ⟪ x ⟫ ⊆ R, while R ⊆ R ⟪ x ⟫ is trivial
                      (lemma-03-3 (A ⟪ x ⟫) B (R ⟪ x ⟫) R S 
                        (mono-⟪x⟫ R x))
                      (lemma-03' Rx⊆R  (h x)
-                                 -- A⊆B∪C → C⊆D → A⊆B∪D
-                                (lemma-03-4 (P ⟪ x ⟫) (A ⟪ x ⟫) (R ⟪ x ⟫) R
-                                  (subst-∪⟪⟫⊆ x P⊆A∪R)
-                                  (lemma-03-2 R x (Rx⊆R x)))
-                                AF-B∪S)))
+                                 -- C⊆D → A⊆B∪C → A⊆B∪D
+                                (lemma-03-4 (lemma-03-2 x (Rx⊆R x))
+                                            (subst-∪⟪⟫⊆ x P⊆A∪R))
+                                            AF-B∪S)))
   
 
 -----------------------------------------------------------------------------
@@ -480,9 +542,14 @@ lemma-03-sym : {X : Set} → (A B R S : Pred[ X ]) →
                AF (A ∪ R) → AF (B ∪ S) → AF (A ∪ B ∪ R ∩ S)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03-sym A B R S h1 h2 h3 =
-  -- show  AF (B ∪ A ∪ S ∩ R)
-  mono-AF (λ x → B⊎A⊎D×C→A⊎B⊎C×D) (lemma-03 B A S R h1 h3 h2)
+lemma-03-sym A B R S Sx⊆S afA∪R afB∪S =
+  mono-AF
+    (begin
+      B ∪ A ∪ (S ∩ R)
+        ⊆⟨ B∪A∪D∩C⊆A∪B∪C∩D ⟩
+      A ∪ B ∪ (R ∩ S) ∎)
+    (lemma-03 B A S R Sx⊆S afB∪S afA∪R)
+  where open ⊆-Reasoning
 
 -----------------------------------------------------------------------------
 -- preparation for theorem-04
