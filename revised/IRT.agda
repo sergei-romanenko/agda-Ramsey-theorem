@@ -28,10 +28,6 @@ import Function.Related as Related
 -----------------------------------------------------------------------------
 -- Predicates and relations
 
-Pred[_] : ∀ {ℓ} (X : Set ℓ) → Set (lsuc ℓ)
-Pred[ A ] = Pred (List A) _
-
-
 -----------------------------------------------------------------------------
 -- ⊆ is a preorder
 
@@ -45,7 +41,8 @@ Pred[ A ] = Pred (List A) _
 
 
 -----------------------------------------------------------------------------
--- List predicate equality
+-- Predicate "equality"
+-- (To be used as the "underlying equality" in the definition of ⊆-preorder.
 
 infix 4 _≋_ 
 
@@ -75,6 +72,7 @@ A ≋ B = A ⊆ B × B ⊆ A
    isEquivalence = record
    { refl = ≋-refl ; sym = ≋-sym ; trans = ≋-trans } }
 
+-----------------------------------------------------------------------------
 ⊆-preorder : ∀ {ℓ} {X : Set ℓ} → Preorder (lsuc ℓ) ℓ ℓ
 ⊆-preorder {ℓ} {X} = record
   { Carrier = Pred X ℓ
@@ -123,8 +121,56 @@ mono-∩ʳ : ∀ {ℓ} {X : Set ℓ} {A B₁ B₂ : Pred X ℓ} →
                   B₁ ⊆ B₂ → A ∩ B₁ ⊆ A ∩ B₂
 mono-∩ʳ B₁⊆B₂ = mono-∩ ⊆-refl B₁⊆B₂
 
+-----------------------------------------------------------------------------
+-- Some logical facts to be used later
+-----------------------------------------------------------------------------
+
+A∪A⊆A : ∀ {ℓ} {X : Set ℓ} {A : Pred X ℓ} →
+  A ∪ A ⊆ A
+A∪A⊆A x =
+  [ id , id ]′
+
+A⊆A∪B : ∀ {ℓ} {X : Set ℓ} {A B : Pred X ℓ} →
+  A ⊆ A ∪ B
+A⊆A∪B xs = inj₁
+
+B∪A⊆A∪B : ∀ {ℓ} {X : Set ℓ} {A B : Pred X ℓ} →
+  B ∪ A ⊆ A ∪ B
+B∪A⊆A∪B xs =
+  [ inj₂ , inj₁ ]′
+
+A∪[B∪C]⊆[A∪B]∪C : ∀ {ℓ} {X : Set ℓ} {A B C : Pred X ℓ} →
+  A ∪ (B ∪ C) ⊆ (A ∪ B) ∪ C
+A∪[B∪C]⊆[A∪B]∪C xs =
+  [ inj₁ ∘ inj₁ , Sum.map inj₂ id ]′
+
+[A∪C]∩[B∪D]⊆A∪B∪[C∩D] : ∀ {ℓ} {X : Set ℓ} {A B C D : Pred X ℓ} →
+  (A ∪ C) ∩ (B ∪ D) ⊆ A ∪ B ∪ (C ∩ D)
+[A∪C]∩[B∪D]⊆A∪B∪[C∩D] xs =
+  uncurry [ flip (const inj₁) ,
+            flip [ flip (const (inj₂ ∘ inj₁)) , flip (curry (inj₂ ∘ inj₂)) ]′ ]′
+
+B∪A∪D∩C⊆A∪B∪C∩D : ∀ {ℓ} {X : Set ℓ} {A B C D : Pred X ℓ} →
+  B ∪ A ∪ D ∩ C ⊆ A ∪ B ∪ (C ∩ D)
+B∪A∪D∩C⊆A∪B∪C∩D xs =
+  [ inj₂ ∘ inj₁ , Sum.map id (inj₂ ∘ < proj₂ , proj₁ >) ]′
+
+A∩[B∪C]⊆A∩B∪A∩C : ∀ {ℓ} {X : Set ℓ} {A B C : Pred X ℓ} →
+  A ∩ (B ∪ C) ⊆ A ∩ B ∪ A ∩ C
+A∩[B∪C]⊆A∩B∪A∩C xs =
+  uncurry (λ a → Sum.map (_,_ a) (_,_ a))
+
+[A∪B]∩C⊆A∩C∪B∩C : ∀ {ℓ} {X : Set ℓ} {A B C : Pred X ℓ} →
+  (A ∪ B) ∩ C ⊆ (A ∩ C) ∪ (B ∩ C)
+[A∪B]∩C⊆A∩C∪B∩C xs =
+  uncurry (λ c → Sum.map (flip _,_ c) (flip _,_ c)) ∘ swap
 
 -----------------------------------------------------------------------------
+-- List predicates
+-----------------------------------------------------------------------------
+
+Pred[_] : ∀ {ℓ} (X : Set ℓ) → Set (lsuc ℓ)
+Pred[ A ] = Pred (List A) _
 
 -- The false list predicate
 𝟘 : {X : Set} → Pred[ X ]
@@ -216,52 +262,6 @@ subst-∪⟪⟫⊆ {X} {P} {B} {S} x P⊆B∪S = begin
   B ⟪ x ⟫ ∪ S ⟪ x ⟫
   ∎
   where open ⊆-Reasoning
-
------------------------------------------------------------------------------
--- Some logical facts
------------------------------------------------------------------------------
-
--- a few laws to be used later
-
-A∪A⊆A : {X : Set} {A : Pred[ X ]} →
-  A ∪ A ⊆ A
-A∪A⊆A xs =
-  [ id , id ]′
-
-A⊆A∪B : {X : Set} {A B : Pred[ X ]} →
-  A ⊆ A ∪ B
-A⊆A∪B xs = inj₁
-
-B∪A⊆A∪B : {X : Set} {A B : Pred[ X ]} →
-  B ∪ A ⊆ A ∪ B
-B∪A⊆A∪B xs =
-  [ inj₂ , inj₁ ]′
-
-A∪[B∪C]⊆[A∪B]∪C : {X : Set} {A B C : Pred[ X ]} →
-  A ∪ (B ∪ C) ⊆ (A ∪ B) ∪ C
-A∪[B∪C]⊆[A∪B]∪C xs =
-  [ inj₁ ∘ inj₁ , Sum.map inj₂ id ]′
-
-[A∪C]∩[B∪D]⊆A∪B∪[C∩D] : {X : Set} {A B C D : Pred[ X ]} →
-  (A ∪ C) ∩ (B ∪ D) ⊆ A ∪ B ∪ (C ∩ D)
-[A∪C]∩[B∪D]⊆A∪B∪[C∩D] xs =
-  uncurry [ flip (const inj₁) ,
-            flip [ flip (const (inj₂ ∘ inj₁)) , flip (curry (inj₂ ∘ inj₂)) ]′ ]′
-
-B∪A∪D∩C⊆A∪B∪C∩D : {X : Set} {A B C D : Pred[ X ]} →
-  B ∪ A ∪ D ∩ C ⊆ A ∪ B ∪ (C ∩ D)
-B∪A∪D∩C⊆A∪B∪C∩D xs =
-  [ inj₂ ∘ inj₁ , Sum.map id (inj₂ ∘ < proj₂ , proj₁ >) ]′
-
-A∩[B∪C]⊆A∩B∪A∩C : {X : Set} {A B C : Pred[ X ]} →
-  A ∩ (B ∪ C) ⊆ A ∩ B ∪ A ∩ C
-A∩[B∪C]⊆A∩B∪A∩C xs =
-  uncurry (λ a → Sum.map (_,_ a) (_,_ a))
-
-[A∪B]∩C⊆A∩C∪B∩C : {X : Set} {A B C : Pred[ X ]} →
-  (A ∪ B) ∩ C ⊆ (A ∩ C) ∪ (B ∩ C)
-[A∪B]∩C⊆A∩C∪B∩C xs =
-  uncurry (λ c → Sum.map (flip _,_ c) (flip _,_ c)) ∘ swap
 
 -----------------------------------------------------------------------------
 -- n-ary relations
@@ -560,6 +560,7 @@ lemma-03-sym {X} {A} {B} {R} {S} Sx⊆S afA∪R afB∪S =
 lemma-04-1 :
   {X : Set} {A B R S : Pred[ X ]} (x : X) →
   (A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ (R ∩ S)) ∪ (R · x ∩ S · x) ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
+
 lemma-04-1 {X} {A} {B} {R} {S} x xs =
   [ [ Sum.map inj₁ inj₁ ,
       [ Sum.map (inj₂ ∘ inj₁) (inj₂ ∘ inj₁) , inj₁ ∘ inj₂ ∘ inj₂ ]′ ]′ ,
@@ -570,22 +571,26 @@ lemma-04-2 : {X : Set} {A B R S : Pred[ X ]} (x : X) →
              (A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ (A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ R · x ∩ S · x
              ⊆
              (A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ R · x ∩ S · x
+
 lemma-04-2 {X} {A} {B} {R} {S} x xs =
   [ inj₁ ∘ [ inj₁ , inj₂ ∘ Sum.map inj₁ id ]′ , Sum.map (Sum.map inj₁ id) id ]′
 
 -----------------------------------------------------------------------------
 lemma-04-3 : {X : Set} {A B R S : Pred[ X ]} (x : X) →
              (A ⟪ x ⟫ ∪ R · x) ∪ B ∪ (R ∩ S) ⊆ (A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ R · x
+
 lemma-04-3 {X} {A} {B} {R} {S} x xs =
   [ Sum.map inj₁ id , inj₁ ∘ inj₂ ]′
 
 lemma-04-4 : {X : Set} {A B R S : Pred[ X ]} (x : X) →
              A ∪ (B ⟪ x ⟫ ∪ S · x) ∪ R ∩ S ⊆ (A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ S · x
+
 lemma-04-4 {X} {A} {B} {R} {S} x xs =
   [ inj₁ ∘ inj₁ , [ Sum.map (inj₂ ∘ inj₁) id , inj₁ ∘ inj₂ ∘ inj₂ ]′ ]′
 
 lemma-04-5 : {X : Set} {P A R : Pred[ X ]} (x : X) →
              P ⊆ A ∪ R → P ⟪ x ⟫ ⊆ (A ⟪ x ⟫ ∪ R · x) ∪ R
+
 lemma-04-5 {X} {P} {A} {R} x P⊆A∪R = begin
   P ⟪ x ⟫
     ⊆⟨ subst-∪⟪⟫⊆ x P⊆A∪R ⟩
@@ -608,18 +613,22 @@ theorem-04' (ar-now R·⊆R) ArS P⊆A∪R Q⊆B∪S AfP AfQ =
     lemma-03 R·⊆R 
       (mono-AF P⊆A∪R AfP)
       (mono-AF Q⊆B∪S AfQ)
+
 theorem-04' (ar-later arRx) (ar-now Sx⊆S)
   P⊆A∪R Q⊆B∪S AfP AfQ = 
     lemma-03-sym Sx⊆S
       (mono-AF P⊆A∪R AfP)
       (mono-AF Q⊆B∪S AfQ)
+
 theorem-04' (ar-later arRx) (ar-later arSx) P⊆A∪R Q⊆B∪S (af-now 𝟙⊆P) AfQ = 
     lemma-02 (λ xs → P⊆A∪R xs (𝟙⊆P xs)) (mono-AF Q⊆B∪S AfQ)
+
 theorem-04'
   (ar-later arRx) (ar-later arSx) P⊆A∪R Q⊆B∪S (af-later afPx) (af-now 𝟙⊆Q) =
     lemma-02-sym
       (λ xs → Q⊆B∪S xs (𝟙⊆Q xs))
       (mono-AF P⊆A∪R (af-later afPx))
+
 theorem-04'
   (ar-later arRx) (ar-later arSx) P⊆A∪R Q⊆B∪S (af-later afPx) (af-later afQx) =
     af-later (λ x → 
