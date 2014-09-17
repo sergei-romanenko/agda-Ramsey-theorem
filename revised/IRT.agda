@@ -25,12 +25,12 @@ import Relation.Binary.PreorderReasoning as Pre
 open import Function
 import Function.Related as Related
 
---open import ListPredicate
-
+-----------------------------------------------------------------------------
 -- Predicates and relations
 
 Pred[_] : ∀ {ℓ} (X : Set ℓ) → Set (lsuc ℓ)
 Pred[ A ] = Pred (List A) _
+
 
 -----------------------------------------------------------------------------
 -- ⊆ is a preorder
@@ -232,6 +232,16 @@ A⊆A∪B : {X : Set} {A B : Pred[ X ]} →
   A ⊆ A ∪ B
 A⊆A∪B xs = inj₁
 
+B∪A⊆A∪B : {X : Set} {A B : Pred[ X ]} →
+  B ∪ A ⊆ A ∪ B
+B∪A⊆A∪B xs =
+  [ inj₂ , inj₁ ]′
+
+A∪[B∪C]⊆[A∪B]∪C : {X : Set} {A B C : Pred[ X ]} →
+  A ∪ (B ∪ C) ⊆ (A ∪ B) ∪ C
+A∪[B∪C]⊆[A∪B]∪C xs =
+  [ inj₁ ∘ inj₁ , Sum.map inj₂ id ]′
+
 [A∪C]∩[B∪D]⊆A∪B∪[C∩D] : {X : Set} {A B C D : Pred[ X ]} →
   (A ∪ C) ∩ (B ∪ D) ⊆ A ∪ B ∪ (C ∩ D)
 [A∪C]∩[B∪D]⊆A∪B∪[C∩D] xs =
@@ -321,21 +331,12 @@ data AF {X : Set} (A : Pred[ X ]) : Set where
   af-now :   (n : 𝟙⊆ A) → AF A
   af-later : (l : (x : X) → AF (A ⟪ x ⟫)) → AF A
 
-
--- By P is monotone, we mean: (A → B) → P(A) → P(B)
--- So IRT.lemma-01 could be formulated as AF being monotone
-
-monotone : ∀ {ℓ} {X : Set ℓ} → (Pred X ℓ → Set ℓ) → Set (lsuc ℓ)
-monotone {ℓ} {X} P = {A B : Pred X ℓ} →
-                        ((x : X) → A x → B x) → (P A → P B)
-
 -----------------------------------------------------------------------------
 -- Monotonicity of AF
 --
 -- As stated in Coquand's note:
--- mono-AF : {X : Set} → {A B : Pred[ X ]} → A ⊆ B → AF A → AF B
 -----------------------------------------------------------------------------
-mono-AF : {X : Set} → monotone (AF {X})
+mono-AF : {X : Set}  → {A B : Pred[ X ]} → A ⊆ B → AF A → AF B
 -----------------------------------------------------------------------------
 mono-AF A⊆B (af-now 𝟙⊆A) =
   af-now (mono-𝟙⊆ A⊆B 𝟙⊆A)
@@ -415,13 +416,13 @@ lemma-02₀ {X} {P} {A} {B} {R} {S} P⊆B∪S 𝟙⊆A∪R (af-now 𝟙⊆P) =
     A ∪ B ∪ (R ∩ S)
     ∎
 
-lemma-02₀ {X} {P} {A} {B} {R} {S} P⊆B∪S A∪R (af-later afPx) = 
+lemma-02₀ {X} {P} {A} {B} {R} {S} P⊆B∪S A∪R (af-later afP⟪⟫) = 
   af-later (λ x → 
     mono-AF
       (A ∪ B ⟪ x ⟫ ∪ (R ∩ S ⟪ x ⟫) ⊆ (A ∪ B ∪ (R ∩ S)) ⟪ x ⟫
         ∋ lemma-02₂ A B R S x A∪R)
       (lemma-02₀ (P ⟪ x ⟫ ⊆ B ⟪ x ⟫ ∪ S ⟪ x ⟫ ∋ subst-∪⟪⟫⊆ x P⊆B∪S)
-                 A∪R (afPx x)))
+                 A∪R (afP⟪⟫ x)))
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -451,20 +452,15 @@ lemma-02-sym {X} {A} {B} {R} {S} B∪S afA∪R =
 -----------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
-lemma-03-3 : {X : Set} (A B R₂ R₁ S : Pred[ X ]) →
-             R₁ ⊆ R₂ → A ∪ B ∪ R₁ ∩ S ⊆ A ∪ B ∪ R₂ ∩ S
+lemma-03⊆ : {X : Set} {P A B R S : Pred[ X ]} (x : X) → 
+               (∀ x → R · x ⊆ R) → P ⊆ A ∪ R →
+               A ⟪ x ⟫ ∪ B ∪ R ∩ S ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
 
-lemma-03-3 A B R₂ R₁ S R₁⊆R₂ = begin
-  A ∪ B ∪ R₁ ∩ S  ⊆⟨ mono-∪ʳ $ mono-∪ʳ (mono-∩ˡ R₁⊆R₂) ⟩ A ∪ B ∪ R₂ ∩ S ∎
-  where open ⊆-Reasoning
-
------------------------------------------------------------------------------
-lemma-03-1 : {X : Set} {A B R S : Pred[ X ]} (x : X) →
-             R · x ⊆ R → A ⟪ x ⟫ ∪ B ∪ R ⟪ x ⟫ ∩ S ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
-lemma-03-1 {X} {A} {B} {R} {S} x Rx⊆R = begin
+lemma-03⊆ {X} {P} {A} {B} {R} {S} x R·⊆R P⊆A∪R = begin
+  A ⟪ x ⟫ ∪ B ∪ R ∩ S
+    ⊆⟨ mono-∪ʳ $ mono-∪ʳ $ mono-∩ˡ $ mono-⟪x⟫ R x ⟩
   A ⟪ x ⟫ ∪ B ∪ R ⟪ x ⟫ ∩ S
-    --⊆⟨ mono-∪ʳ $ mono-∪ (mono-⟪x⟫ B x) helper ⟩
-    ⊆⟨ mono-∪ʳ $ mono-∪ (mono-⟪x⟫ B x) helper ⟩
+    ⊆⟨ mono-∪ʳ $ mono-∪ (mono-⟪x⟫ B x) R⟪⟫∩S⊆[R∩S]⟪⟫ ⟩
   A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ (R ∩ S) ⟪ x ⟫
     ⊆⟨ mono-∪ʳ $ distrib-∪⟪⟫⊇ ⟩
   A ⟪ x ⟫ ∪ (B ∪ (R ∩ S)) ⟪ x ⟫
@@ -473,13 +469,14 @@ lemma-03-1 {X} {A} {B} {R} {S} x Rx⊆R = begin
   ∎
   where
   open ⊆-Reasoning
-  helper = begin
+
+  R⟪⟫∩S⊆[R∩S]⟪⟫ = begin
     R ⟪ x ⟫ ∩ S
       ≋⟨⟩
     (R ∪ R · x) ∩ S
       ⊆⟨ [A∪B]∩C⊆A∩C∪B∩C ⟩
     (R ∩ S) ∪ (R · x ∩ S)
-      ⊆⟨ mono-∪ʳ $ mono-∩ˡ Rx⊆R ⟩
+      ⊆⟨ mono-∪ʳ $ mono-∩ˡ (R·⊆R x) ⟩
     (R ∩ S) ∪ (R ∩ S)
       ⊆⟨ A∪A⊆A ⟩
     R ∩ S
@@ -490,187 +487,185 @@ lemma-03-1 {X} {A} {B} {R} {S} x Rx⊆R = begin
     ∎
 
 -----------------------------------------------------------------------------
-lemma-03-2 : {X : Set} {R : Pred[ X ]} (x : X) →
-             R · x ⊆ R → R ⟪ x ⟫ ⊆ R
-lemma-03-2 {X} {R} x Rx⊆R = begin
-  R ⟪ x ⟫ ≋⟨⟩ R ∪ R · x ⊆⟨ mono-∪ʳ $ Rx⊆R ⟩ R ∪ R ⊆⟨ A∪A⊆A ⟩ R ∎
-  where open ⊆-Reasoning
-
 -----------------------------------------------------------------------------
-lemma-03-4 : {X : Set} {A B C D : Pred[ X ]} →
-             C ⊆ D → A ⊆ B ∪ C → A ⊆ B ∪ D
-lemma-03-4 {X} {A} {B} {C} {D} C⊆D A⊆B∪C = begin
-  A ⊆⟨ A⊆B∪C ⟩ B ∪ C ⊆⟨ mono-∪ʳ $ C⊆D ⟩ B ∪ D ∎
-  where open ⊆-Reasoning
-
------------------------------------------------------------------------------
------------------------------------------------------------------------------
-lemma-03' : {X : Set} {P A B R S : Pred[ X ]} →
-            (∀ x → R · x ⊆ R) → AF P → P ⊆ A ∪ R → AF (B ∪ S) → 
+lemma-03₀ : {X : Set} {P A B R S : Pred[ X ]} →
+            (∀ x → R · x ⊆ R) → P ⊆ A ∪ R → AF P → AF (B ∪ S) → 
             AF (A ∪ B ∪ R ∩ S)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03' {X} {P} {A} {B} {R} {S} Rx⊆R (af-now n) P⊆A∪R AF-B∪S = 
-  lemma-02 (mono-𝟙⊆ P⊆A∪R n) AF-B∪S
 
-lemma-03' {X} {P} {A} {B} {R} {S} Rx⊆R (af-later h) P⊆A∪R AF-B∪S = 
-  af-later (λ x →
-    mono-AF (lemma-03-1 x (Rx⊆R x))
-            (mono-AF -- use R ⟪ x ⟫ ⊆ R, while R ⊆ R ⟪ x ⟫ is trivial
-                     (lemma-03-3 (A ⟪ x ⟫) B (R ⟪ x ⟫) R S 
-                       (mono-⟪x⟫ R x))
-                     (lemma-03' Rx⊆R  (h x)
-                                 -- C⊆D → A⊆B∪C → A⊆B∪D
-                                (lemma-03-4 (lemma-03-2 x (Rx⊆R x))
-                                            (subst-∪⟪⟫⊆ x P⊆A∪R))
-                                            AF-B∪S)))
+lemma-03₀ {X} {P} {A} {B} {R} {S} R·⊆R P⊆A∪R (af-now 𝟙⊆P) afB∪S = 
+  lemma-02 (mono-𝟙⊆ P⊆A∪R 𝟙⊆P) afB∪S
+
+lemma-03₀ {X} {P} {A} {B} {R} {S} R·⊆R P⊆A∪R (af-later afP⟪⟫) afB∪S =
+  af-later AF-[A∪B∪R∩S]⟪⟫
+  where
+  open ⊆-Reasoning
+
+  R⟪⟫⊆R : ∀ x → R ⟪ x ⟫ ⊆ R
+  R⟪⟫⊆R x = begin
+    R ⟪ x ⟫ ≋⟨⟩ R ∪ R · x ⊆⟨ mono-∪ʳ $ R·⊆R x ⟩ R ∪ R ⊆⟨ A∪A⊆A ⟩ R ∎
+
+  P⟪⟫⊆A⟪⟫∪R : ∀ x → P ⟪ x ⟫ ⊆ A ⟪ x ⟫ ∪ R
+  P⟪⟫⊆A⟪⟫∪R x = begin
+    P ⟪ x ⟫
+      ⊆⟨ mono-⟪⟫ x P⊆A∪R ⟩
+    (A ∪ R) ⟪ x ⟫
+      ⊆⟨ distrib-∪⟪⟫⊆ A R x ⟩
+    A ⟪ x ⟫ ∪ R ⟪ x ⟫
+      ⊆⟨ mono-∪ʳ $ R⟪⟫⊆R x ⟩
+    A ⟪ x ⟫ ∪ R
+    ∎
+
+  AF-A⟪⟫∪B∪R∩S : ∀ x → AF (A ⟪ x ⟫ ∪ B ∪ R ∩ S)
+  AF-A⟪⟫∪B∪R∩S x = lemma-03₀ R·⊆R (P⟪⟫⊆A⟪⟫∪R x) (afP⟪⟫ x) afB∪S
+
+  AF-[A∪B∪R∩S]⟪⟫ : ∀ x → AF ((A ∪ B ∪ R ∩ S) ⟪ x ⟫ )
+  AF-[A∪B∪R∩S]⟪⟫ x =
+    mono-AF
+      (begin
+        (A ⟪ x ⟫ ∪ B ∪ R ∩ S)
+          ⊆⟨ lemma-03⊆ x R·⊆R P⊆A∪R ⟩
+        (A ∪ B ∪ R ∩ S) ⟪ x ⟫ ∎)
+      (AF-A⟪⟫∪B∪R∩S x)
   
-
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03 : {X : Set} → (A B R S : Pred[ X ]) →
+lemma-03 : {X : Set} {A B R S : Pred[ X ]} →
            (∀ x → R · x ⊆ R) → AF (A ∪ R) → AF (B ∪ S) → AF (A ∪ B ∪ R ∩ S)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03 A B R S h1 h2 =
-  lemma-03' h1 h2 ⊆-refl
+lemma-03 R·⊆R afA∪R =
+  lemma-03₀ R·⊆R ⊆-refl afA∪R
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03-sym : {X : Set} → (A B R S : Pred[ X ]) →
+lemma-03-sym : {X : Set} {A B R S : Pred[ X ]} →
                (∀ x → S · x ⊆ S) →
                AF (A ∪ R) → AF (B ∪ S) → AF (A ∪ B ∪ R ∩ S)
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-lemma-03-sym A B R S Sx⊆S afA∪R afB∪S =
+lemma-03-sym {X} {A} {B} {R} {S} Sx⊆S afA∪R afB∪S =
   mono-AF
     (begin
       B ∪ A ∪ (S ∩ R)
         ⊆⟨ B∪A∪D∩C⊆A∪B∪C∩D ⟩
       A ∪ B ∪ (R ∩ S) ∎)
-    (lemma-03 B A S R Sx⊆S afB∪S afA∪R)
+    (lemma-03 Sx⊆S afB∪S afA∪R)
   where open ⊆-Reasoning
 
 -----------------------------------------------------------------------------
 -- preparation for theorem-04
 -----------------------------------------------------------------------------
 lemma-04-1 :
-  {X : Set} (A B R S : Pred[ X ]) (x : X) →
+  {X : Set} {A B R S : Pred[ X ]} (x : X) →
   (A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ (R ∩ S)) ∪ (R · x ∩ S · x) ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
-lemma-04-1 A B R S x xs =
+lemma-04-1 {X} {A} {B} {R} {S} x xs =
   [ [ Sum.map inj₁ inj₁ ,
       [ Sum.map (inj₂ ∘ inj₁) (inj₂ ∘ inj₁) , inj₁ ∘ inj₂ ∘ inj₂ ]′ ]′ ,
     inj₂ ∘ inj₂ ∘ inj₂ ]′
 
 -----------------------------------------------------------------------------
-lemma-04-2 : {X : Set} (A B R S : Pred[ X ]) (x : X) →
+lemma-04-2 : {X : Set} {A B R S : Pred[ X ]} (x : X) →
              (A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ (A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ R · x ∩ S · x
              ⊆
              (A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ R · x ∩ S · x
-lemma-04-2 A B R S x xs =
+lemma-04-2 {X} {A} {B} {R} {S} x xs =
   [ inj₁ ∘ [ inj₁ , inj₂ ∘ Sum.map inj₁ id ]′ , Sum.map (Sum.map inj₁ id) id ]′
 
 -----------------------------------------------------------------------------
-lemma-04-3 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
+lemma-04-3 : {X : Set} {A B R S : Pred[ X ]} (x : X) →
              (A ⟪ x ⟫ ∪ R · x) ∪ B ∪ (R ∩ S) ⊆ (A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ R · x
-lemma-04-3 A B R S x xs =
+lemma-04-3 {X} {A} {B} {R} {S} x xs =
   [ Sum.map inj₁ id , inj₁ ∘ inj₂ ]′
 
-lemma-04-4 : {X : Set} → (A B R S : Pred[ X ]) → (x : X) →
+lemma-04-4 : {X : Set} {A B R S : Pred[ X ]} (x : X) →
              A ∪ (B ⟪ x ⟫ ∪ S · x) ∪ R ∩ S ⊆ (A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ S · x
-lemma-04-4 A B R S x xs =
+lemma-04-4 {X} {A} {B} {R} {S} x xs =
   [ inj₁ ∘ inj₁ , [ Sum.map (inj₂ ∘ inj₁) id , inj₁ ∘ inj₂ ∘ inj₂ ]′ ]′
 
-lemma-04-5 : {X : Set} → (P A R : Pred[ X ]) → (x : X) →
+lemma-04-5 : {X : Set} {P A R : Pred[ X ]} (x : X) →
              P ⊆ A ∪ R → P ⟪ x ⟫ ⊆ (A ⟪ x ⟫ ∪ R · x) ∪ R
-lemma-04-5 P A R x P⊆A∪R xs =
-  (P ⟪ x ⟫) xs
-    ∼⟨ subst-∪⟪⟫⊆ x P⊆A∪R xs ⟩
-  (A ⟪ x ⟫ ∪ R ⟪ x ⟫) xs
-    ∼⟨ [ inj₁ ∘ inj₁ , [ inj₂ , inj₁ ∘ inj₂ ]′ ]′ ⟩
-  ((A ⟪ x ⟫ ∪ R · x) ∪ R) xs
+lemma-04-5 {X} {P} {A} {R} x P⊆A∪R = begin
+  P ⟪ x ⟫
+    ⊆⟨ subst-∪⟪⟫⊆ x P⊆A∪R ⟩
+  A ⟪ x ⟫ ∪ R ⟪ x ⟫
+    ⊆⟨ mono-∪ʳ B∪A⊆A∪B ⟩
+  A ⟪ x ⟫ ∪ (R · x ∪ R)
+    ⊆⟨ A∪[B∪C]⊆[A∪B]∪C ⟩
+  (A ⟪ x ⟫ ∪ R · x) ∪ R
   ∎
-  where
-  open Related.EquationalReasoning
+  where open ⊆-Reasoning
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-theorem-04' : {X : Set} → (A B R S P Q : Pred[ X ]) → 
+theorem-04' : {X : Set} {A B R S P Q : Pred[ X ]} → 
               Ar R → Ar S → P ⊆ A ∪ R → Q ⊆ B ∪ S →
               AF P → AF Q → AF (A ∪ B ∪ (R ∩ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-theorem-04'
-  A B R S P Q (ar-now h) ArS P⊆A∪R Q⊆B∪S AfP AfQ = 
-    lemma-03 A B R S h 
+theorem-04' (ar-now R·⊆R) ArS P⊆A∪R Q⊆B∪S AfP AfQ = 
+    lemma-03 R·⊆R 
       (mono-AF P⊆A∪R AfP)
       (mono-AF Q⊆B∪S AfQ)
-theorem-04'
-  A B R S P Q (ar-later h) (ar-now h')
+theorem-04' (ar-later arRx) (ar-now Sx⊆S)
   P⊆A∪R Q⊆B∪S AfP AfQ = 
-    lemma-03-sym A B R S h'
+    lemma-03-sym Sx⊆S
       (mono-AF P⊆A∪R AfP)
       (mono-AF Q⊆B∪S AfQ)
-theorem-04' A B R S P Q (ar-later h1) (ar-later h2) P⊆A∪R Q⊆B∪S (af-now h3) AfQ = 
-    lemma-02 (λ xs → P⊆A∪R xs (h3 xs)) (mono-AF Q⊆B∪S AfQ)
-theorem-04' A B R S P Q
-  (ar-later h1) (ar-later h2) P⊆A∪R Q⊆B∪S
-  (af-later h3) (af-now h4) =
+theorem-04' (ar-later arRx) (ar-later arSx) P⊆A∪R Q⊆B∪S (af-now 𝟙⊆P) AfQ = 
+    lemma-02 (λ xs → P⊆A∪R xs (𝟙⊆P xs)) (mono-AF Q⊆B∪S AfQ)
+theorem-04'
+  (ar-later arRx) (ar-later arSx) P⊆A∪R Q⊆B∪S (af-later afPx) (af-now 𝟙⊆Q) =
     lemma-02-sym
-      (λ xs → Q⊆B∪S xs (h4 xs))
-      (mono-AF P⊆A∪R (af-later h3))
-theorem-04' A B R S P Q
-  (ar-later h1) (ar-later h2) P⊆A∪R Q⊆B∪S (af-later h3) (af-later h4) =
+      (λ xs → Q⊆B∪S xs (𝟙⊆Q xs))
+      (mono-AF P⊆A∪R (af-later afPx))
+theorem-04'
+  (ar-later arRx) (ar-later arSx) P⊆A∪R Q⊆B∪S (af-later afPx) (af-later afQx) =
     af-later (λ x → 
       mono-AF 
-        (lemma-04-1 A B R S x)
+        (lemma-04-1 x)
         (mono-AF
-           (lemma-04-2 A B R S x)
-           (theorem-04' (A ⟪ x ⟫ ∪ B ∪ R ∩ S)
-                        (A ∪ B ⟪ x ⟫ ∪ R ∩ S)
-             (R · x) (S · x)
-             ((A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ R · x)
-             ((A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ S · x)
+           (lemma-04-2 x)
+           (theorem-04'
              -- Ar (R · x)
-             (h1 x)
+             (arRx x)
              -- Ar (S · x)
-             (h2 x)
+             (arSx x)
              ⊆-refl
              ⊆-refl
              -- Goal: AF ((A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ R · x)
              -- we use AF (A ⟪ x ⟫ ∪ R · x ∪ R) and AF (B ∪ S)
              (mono-AF 
-               (lemma-04-3 A B R S x)
+               (lemma-04-3 {-A B R S-} x)
                -- AF ((A ⟪ x ⟫ ∪ R · x) ∪ B ∪ R ∩ S)
-               (theorem-04' (A ⟪ x ⟫ ∪ R · x) B R S
-                 (P ⟪ x ⟫) Q
-                 (ar-later h1) (ar-later h2)
+               (theorem-04'
+                 (ar-later arRx) (ar-later arSx)
                  -- P ⟪ x ⟫ ⊆ (A ⟪ x ⟫ ∪ R · x) ∪ R
-                 (lemma-04-5 P A R x P⊆A∪R)
+                 (lemma-04-5 x P⊆A∪R)
                  Q⊆B∪S
-                 (h3 x)
-                 (af-later h4)))
+                 (afPx x)
+                 (af-later afQx)))
              -- Goal: AF ((A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ S · x)
              -- we use AF (B ⟪ x ⟫ ∪ S · x ∪ S) and AF (A ∪ R)
              (mono-AF
-               (lemma-04-4 A B R S x)
+               (lemma-04-4 x)
                -- AF (A ∪ S · x ∪ B ⟪ x ⟫ ∪ R ∩ S)
-               (theorem-04' A (B ⟪ x ⟫ ∪ S · x) R S
-                 P (Q ⟪ x ⟫)
-                 (ar-later h1) (ar-later h2)
+               (theorem-04'
+                 (ar-later arRx) (ar-later arSx)
                  P⊆A∪R
-                 (lemma-04-5 Q B S x Q⊆B∪S)
-                 (af-later h3)
-                 (h4 x))))))
+                 (lemma-04-5 x Q⊆B∪S)
+                 (af-later afPx)
+                 (afQx x))))))
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-theorem-04 : {X : Set} → (A B R S : Pred[ X ]) → 
+theorem-04 : {X : Set} (A B R S : Pred[ X ]) → 
              Ar R → Ar S → AF (A ∪ R) → AF (B ∪ S) → AF (A ∪ B ∪ (R ∩ S))
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 theorem-04 A B R S x x' =
-  theorem-04' A B R S (A ∪ R) (B ∪ S) x x' ⊆-refl ⊆-refl
+  theorem-04' x x' ⊆-refl ⊆-refl
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
