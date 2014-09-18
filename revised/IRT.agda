@@ -170,6 +170,12 @@ A∩[B∪C]⊆A∩B∪A∩C xs =
 [A∪B]∩C⊆A∩C∪B∩C xs =
   uncurry (λ c → Sum.map (flip _,_ c) (flip _,_ c)) ∘ swap
 
+A∪C∪D∪B∪E⊆[A∪B]∪C∪D∪E : ∀ {ℓ} {X : Set ℓ} {A B C D E : Pred X ℓ} →
+  A ∪ C ∪ D ∪ B ∪ E ⊆ (A ∪ B) ∪ C ∪ D ∪ E
+A∪C∪D∪B∪E⊆[A∪B]∪C∪D∪E xs =
+  [ inj₁ ∘ inj₁ ,
+    [ inj₂ ∘ inj₁ , [ inj₂ ∘ inj₂ ∘ inj₁ , Sum.map inj₂ (inj₂ ∘ inj₂) ]′ ]′ ]′
+
 -----------------------------------------------------------------------------
 -- List predicates
 -----------------------------------------------------------------------------
@@ -390,12 +396,9 @@ lemma-02₀ {X} {P} {A} {B} {R} {S} P⊆B∪S 𝟙⊆A∪R (af-later afP⟪⟫) 
     A ∪ B ⟪ x ⟫ ∪ (R ∩ S) ∪ (R ∩ S · x)
       ⊆⟨ mono-∪ʳ $ mono-∪ʳ $ mono-∪ʳ $ R∩S·⊆A·∪R·∩S· x ⟩
     A ∪ B ⟪ x ⟫ ∪ (R ∩ S) ∪ (A · x ∪ (R · x ∩ S · x))
-      ⊆⟨ (λ xs →
-        [ inj₁ ∘ inj₁ ,
-          [ inj₂ ∘ inj₁ ,
-            [ inj₂ ∘ inj₂ ∘ inj₁ , [ inj₁ ∘ inj₂ , inj₂ ∘ inj₂ ∘ inj₂ ]′ ]′ ]′ ]′) ⟩
+      ⊆⟨ A∪C∪D∪B∪E⊆[A∪B]∪C∪D∪E ⟩
     (A ∪ A · x) ∪ B ⟪ x ⟫ ∪ (R ∩ S) ∪ (R · x ∩ S · x)
-      ⊆⟨ ⊆-refl ⟩
+      ≋⟨⟩
     A ⟪ x ⟫ ∪ (B ⟪ x ⟫ ∪ (R ∩ S) ⟪ x ⟫)
       ⊆⟨ mono-∪ʳ $ distrib-∪⟪⟫⊇ ⟩
     A ⟪ x ⟫ ∪ (B ∪ (R ∩ S)) ⟪ x ⟫
@@ -435,45 +438,6 @@ lemma-02-sym {X} {A} {B} {R} {S} B∪S afA∪R =
   where open ⊆-Reasoning
 
 -----------------------------------------------------------------------------
--- preparation for lemma-03
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-lemma-03⊆ : {X : Set} {P A B R S : Pred[ X ]} (x : X) → 
-               (∀ x → R · x ⊆ R) → P ⊆ A ∪ R →
-               A ⟪ x ⟫ ∪ B ∪ R ∩ S ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
-
-lemma-03⊆ {X} {P} {A} {B} {R} {S} x R·⊆R P⊆A∪R = begin
-  A ⟪ x ⟫ ∪ B ∪ R ∩ S
-    ⊆⟨ mono-∪ʳ $ mono-∪ʳ $ mono-∩ˡ $ mono-⟪x⟫ ⟩
-  A ⟪ x ⟫ ∪ B ∪ R ⟪ x ⟫ ∩ S
-    ⊆⟨ mono-∪ʳ $ mono-∪ mono-⟪x⟫ R⟪⟫∩S⊆[R∩S]⟪⟫ ⟩
-  A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ (R ∩ S) ⟪ x ⟫
-    ⊆⟨ mono-∪ʳ $ distrib-∪⟪⟫⊇ ⟩
-  A ⟪ x ⟫ ∪ (B ∪ (R ∩ S)) ⟪ x ⟫
-    ⊆⟨ distrib-∪⟪⟫⊇ ⟩
-  (A ∪ B ∪ R ∩ S) ⟪ x ⟫
-  ∎
-  where
-  open ⊆-Reasoning
-
-  R⟪⟫∩S⊆[R∩S]⟪⟫ = begin
-    R ⟪ x ⟫ ∩ S
-      ≋⟨⟩
-    (R ∪ R · x) ∩ S
-      ⊆⟨ [A∪B]∩C⊆A∩C∪B∩C ⟩
-    (R ∩ S) ∪ (R · x ∩ S)
-      ⊆⟨ mono-∪ʳ $ mono-∩ˡ (R·⊆R x) ⟩
-    (R ∩ S) ∪ (R ∩ S)
-      ⊆⟨ A∪A⊆A ⟩
-    R ∩ S
-      ⊆⟨ A⊆A∪B ⟩
-    (R ∩ S) ∪ (R · x ∩ S · x)
-      ≋⟨⟩
-    (R ∩ S) ⟪ x ⟫
-    ∎
-
------------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 lemma-03₀ : {X : Set} {P A B R S : Pred[ X ]} →
             (∀ x → R · x ⊆ R) → P ⊆ A ∪ R → AF P → AF (B ∪ S) → 
@@ -504,15 +468,49 @@ lemma-03₀ {X} {P} {A} {B} {R} {S} R·⊆R P⊆A∪R (af-later afP⟪⟫) afB�
     A ⟪ x ⟫ ∪ R
     ∎
 
+  R⟪⟫∩S⊆[R∩S]⟪⟫ : ∀ x → R ⟪ x ⟫ ∩ S ⊆ (R ∩ S) ⟪ x ⟫
+
+  R⟪⟫∩S⊆[R∩S]⟪⟫ = λ x → begin
+    R ⟪ x ⟫ ∩ S
+      ≋⟨⟩
+    (R ∪ R · x) ∩ S
+      ⊆⟨ [A∪B]∩C⊆A∩C∪B∩C ⟩
+    (R ∩ S) ∪ (R · x ∩ S)
+      ⊆⟨ mono-∪ʳ $ mono-∩ˡ (R·⊆R x) ⟩
+    (R ∩ S) ∪ (R ∩ S)
+      ⊆⟨ A∪A⊆A ⟩
+    R ∩ S
+      ⊆⟨ A⊆A∪B ⟩
+    (R ∩ S) ∪ (R · x ∩ S · x)
+      ≋⟨⟩
+    (R ∩ S) ⟪ x ⟫
+    ∎
+
+  A⟪⟫∪B∪R∩S⊆[A∪B∪R∩S]⟪⟫ : ∀ x → A ⟪ x ⟫ ∪ B ∪ R ∩ S ⊆ (A ∪ B ∪ R ∩ S) ⟪ x ⟫
+  A⟪⟫∪B∪R∩S⊆[A∪B∪R∩S]⟪⟫ = λ x → begin
+    A ⟪ x ⟫ ∪ B ∪ R ∩ S
+      ⊆⟨ mono-∪ʳ $ mono-∪ʳ $ mono-∩ˡ $ mono-⟪x⟫ ⟩
+    A ⟪ x ⟫ ∪ B ∪ R ⟪ x ⟫ ∩ S
+      ⊆⟨ mono-∪ʳ $ mono-∪ mono-⟪x⟫ (R⟪⟫∩S⊆[R∩S]⟪⟫ x) ⟩
+    A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ (R ∩ S) ⟪ x ⟫
+      ⊆⟨ mono-∪ʳ $ distrib-∪⟪⟫⊇ ⟩
+    A ⟪ x ⟫ ∪ (B ∪ (R ∩ S)) ⟪ x ⟫
+      ⊆⟨ distrib-∪⟪⟫⊇ ⟩
+    (A ∪ B ∪ R ∩ S) ⟪ x ⟫
+    ∎
+
   AF-A⟪⟫∪B∪R∩S : ∀ x → AF (A ⟪ x ⟫ ∪ B ∪ R ∩ S)
-  AF-A⟪⟫∪B∪R∩S x = lemma-03₀ R·⊆R (P⟪⟫⊆A⟪⟫∪R x) (afP⟪⟫ x) afB∪S
+  AF-A⟪⟫∪B∪R∩S x =
+    lemma-03₀ R·⊆R
+      (begin P ⟪ x ⟫ ⊆⟨ P⟪⟫⊆A⟪⟫∪R x ⟩ A ⟪ x ⟫ ∪ R ∎)
+      (afP⟪⟫ x) afB∪S
 
   AF-[A∪B∪R∩S]⟪⟫ : ∀ x → AF ((A ∪ B ∪ R ∩ S) ⟪ x ⟫ )
   AF-[A∪B∪R∩S]⟪⟫ x =
     mono-AF
       (begin
         (A ⟪ x ⟫ ∪ B ∪ R ∩ S)
-          ⊆⟨ lemma-03⊆ x R·⊆R P⊆A∪R ⟩
+          ⊆⟨ A⟪⟫∪B∪R∩S⊆[A∪B∪R∩S]⟪⟫ x ⟩
         (A ∪ B ∪ R ∩ S) ⟪ x ⟫ ∎)
       (AF-A⟪⟫∪B∪R∩S x)
   
