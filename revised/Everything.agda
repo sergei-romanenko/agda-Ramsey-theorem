@@ -39,8 +39,12 @@ module Everything where
 -- A distrubutive lattice D with elements a, b, c, and operations ×
 -- and ⊎, neutral element ₁. In this formalisation D is instantiated
 -- to predicates over finite sequences of a given set X. The following
--- file starts with the definitions of some list predicate transformers
--- and proves properties about them.
+-- module defines some list predicate transformers and proves
+-- properties about them.
+
+import ListPredicate
+
+-- The main result
 
 import IRT
 
