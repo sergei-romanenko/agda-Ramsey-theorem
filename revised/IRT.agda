@@ -569,48 +569,34 @@ theorem-04₀
 theorem-04₀ {X} {A} {B} {R} {S} {P} {Q}
   (ar-later arR·) (ar-later arS·) P⊆A∪R Q⊆B∪S (af-later afP·) (af-later afQ·) =
     af-later (λ x →
+      AF ((A ∪ B ∪ (R ∩ S)) ∪ A · x ∪ B · x ∪ (R · x ∩ S · x))
+      ∋
       mono-AF 
-        (((A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ (R · x ∩ S · x))
-             ⊆ ((A ∪ B ∪ (R ∩ S)) ⟪ x ⟫)
-          ∋ helper₁ x)
+        (zip-A⟪⟫B⟪⟫RS x)
         (mono-AF
-           (((A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ (A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ (R · x ∩ S · x))
-             ⊆ ((A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ (R · x ∩ S · x))
-             ∋ helper₂ (R ∩ S) (R · x ∩ S · x) x)
-           (AF ((A ⟪ x ⟫ ∪ B ∪ (R ∩ S)) ∪ (A ∪ B ⟪ x ⟫ ∪ (R ∩ S))
-                   ∪ ((R · x ∩ S · x)))
-             ∋ theorem-04₀ (arR· x) (arS· x) ⊆-refl ⊆-refl
-             -- Goal: AF ((A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ R · x)
-             -- we use AF (A ⟪ x ⟫ ∪ R · x ∪ R) and AF (B ∪ S)
-             (mono-AF 
-               (((A ⟪ x ⟫ ∪ R · x) ∪ B ∪ R ∩ S) ⊆ ((A ⟪ x ⟫ ∪ B ∪ R ∩ S) ∪ R · x)
-                 ∋ helper₃ x)
-               (theorem-04₀
-                 (ar-later arR·) (ar-later arS·)
-                 (P ⟪ x ⟫ ⊆ (A ⟪ x ⟫ ∪ R · x) ∪ R
-                   ∋ helper₅ x P⊆A∪R)
-                 Q⊆B∪S
-                 (afP· x)
-                 (af-later afQ·)))
-             -- Goal: AF ((A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ S · x)
-             -- we use AF (B ⟪ x ⟫ ∪ S · x ∪ S) and AF (A ∪ R)
-             (mono-AF
-               (A ∪ (B ⟪ x ⟫ ∪ S · x) ∪ (R ∩ S)
-                   ⊆ (A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ S · x
-                 ∋ helper₄ x)
-               -- AF (A ∪ S · x ∪ B ⟪ x ⟫ ∪ R ∩ S)
+           (zip-ABCD (R ∩ S) (R · x ∩ S · x) x)
+           (AF ((A ⟪ x ⟫ ∪ B ∪ (R ∩ S)) ∪ (A ∪ B ⟪ x ⟫ ∪ (R ∩ S)) ∪
+                   (R · x ∩ S · x))
+           ∋ 
+           theorem-04₀ (arR· x) (arS· x) ⊆-refl ⊆-refl
+             (AF ((A ⟪ x ⟫ ∪ B ∪ (R ∩ S)) ∪ R · x) ∋
+             mono-AF 
+               (move-A⟪⟫BRS x)
+               (AF ((A ⟪ x ⟫ ∪ R · x) ∪ B ∪ (R ∩ S))
+                 ∋ theorem-04₀ (ar-later arR·) (ar-later arS·)
+                               (use-⊆∪ x P⊆A∪R) Q⊆B∪S
+                               (afP· x) (af-later afQ·)))
+             (AF ((A ∪ B ⟪ x ⟫ ∪ (R ∩ S)) ∪ S · x) ∋
+             mono-AF
+               (move-AB⟪⟫RS x)
                (AF (A ∪ (B ⟪ x ⟫ ∪ S · x) ∪ (R ∩ S))
                  ∋ theorem-04₀ (ar-later arR·) (ar-later arS·)
-                 P⊆A∪R
-                 (Q ⟪ x ⟫ ⊆ (B ⟪ x ⟫ ∪ S · x) ∪ S
-                   ∋ helper₅ x Q⊆B∪S)
-                 (af-later afP·)
-                 (afQ· x))))))
-
+                               P⊆A∪R (use-⊆∪ x Q⊆B∪S)
+                               (af-later afP·) (afQ· x))))))
   where
   open ⊆-Reasoning
 
-  helper₁ = λ x → begin
+  zip-A⟪⟫B⟪⟫RS = λ x → begin
     (A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ (R ∩ S)) ∪ (R · x ∩ S · x)
       ⊆⟨ [A∪B]∪C⊆A∪B∪C ⟩
     A ⟪ x ⟫ ∪ (B ⟪ x ⟫ ∪ (R ∩ S)) ∪ (R · x ∩ S · x)
@@ -624,7 +610,7 @@ theorem-04₀ {X} {A} {B} {R} {S} {P} {Q}
     (A ∪ B ∪ R ∩ S) ⟪ x ⟫
     ∎
 
-  helper₂ = λ C D x → begin
+  zip-ABCD = λ C D x → begin
     (A ⟪ x ⟫ ∪ B ∪ C) ∪ (A ∪ B ⟪ x ⟫ ∪ C) ∪ D
       ⊆⟨ A∪B∪C⊆[A∪B]∪C ⟩
     ((A ⟪ x ⟫ ∪ B ∪ C) ∪ (A ∪ B ⟪ x ⟫ ∪ C)) ∪ D
@@ -634,7 +620,7 @@ theorem-04₀ {X} {A} {B} {R} {S} {P} {Q}
     (A ⟪ x ⟫ ∪ B ⟪ x ⟫ ∪ C) ∪ D
     ∎
 
-  helper₃ = λ x → begin
+  move-A⟪⟫BRS = λ x → begin
     (A ⟪ x ⟫ ∪ R · x) ∪ B ∪ (R ∩ S)
       ⊆⟨ [A∪B]∪C⊆A∪B∪C ⟩
     A ⟪ x ⟫ ∪ R · x ∪ (B ∪ (R ∩ S))
@@ -644,7 +630,7 @@ theorem-04₀ {X} {A} {B} {R} {S} {P} {Q}
     (A ⟪ x ⟫ ∪ B ∪ (R ∩ S)) ∪ R · x
     ∎
 
-  helper₄ = λ x → begin
+  move-AB⟪⟫RS = λ x → begin
     A ∪ (B ⟪ x ⟫ ∪ S · x) ∪ R ∩ S
       ⊆⟨ mono-∪ʳ $ [A∪B]∪C⊆A∪B∪C ⟩
     A ∪ B ⟪ x ⟫ ∪ S · x ∪ R ∩ S
@@ -656,7 +642,7 @@ theorem-04₀ {X} {A} {B} {R} {S} {P} {Q}
     (A ∪ B ⟪ x ⟫ ∪ R ∩ S) ∪ S · x
     ∎
 
-  helper₅ = λ {P} {A} {R} x P⊆A∪R → begin
+  use-⊆∪ = λ {P} {A} {R} x P⊆A∪R → begin
     P ⟪ x ⟫
       ⊆⟨ mono-⟪⟫ x P⊆A∪R ⟩
     (A ∪ R) ⟪ x ⟫
@@ -667,7 +653,6 @@ theorem-04₀ {X} {A} {B} {R} {S} {P} {Q}
       ⊆⟨ A∪B∪C⊆[A∪B]∪C ⟩
     (A ⟪ x ⟫ ∪ R · x) ∪ R
     ∎
-
 
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
