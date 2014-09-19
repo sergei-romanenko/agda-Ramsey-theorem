@@ -1,13 +1,13 @@
 module ListPredicate where
 
-open import Level public
+open import Level
   renaming (zero to lzero; suc to lsuc)
 
 open import Data.Nat
   using (ℕ; zero; suc)
 open import Data.List
   using (List; []; _∷_)
-open import Data.Sum as Sum public
+open import Data.Sum as Sum
   using (_⊎_; inj₁; inj₂; [_,_]′)
 open import Data.Product as Prod
   using (_×_; _,_; proj₁; proj₂; Σ; ∃; swap; curry; uncurry; <_,_>; _-,-_)
@@ -42,7 +42,7 @@ import Function.Related as Related
 
 -----------------------------------------------------------------------------
 -- Predicate "equality"
--- (To be used as the "underlying equality" in the definition of ⊆-preorder.
+-- (To be used as the "underlying equality" in the definition of ⊆-preorder.)
 
 infix 4 _≋_ 
 
